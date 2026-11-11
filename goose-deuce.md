@@ -123,6 +123,22 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — Mirror widened Board with an origin tag; remaining §10 surface deferred  [deferred]
+- Task: T-023 (`docs/SPEC-GUILDHALL.md` §10)
+- What: Two calls beyond T-023's written Touches/Accept. (1) `Board.post(text, via)` gained an optional origin tag carried in the record payload and surfaced as `rows().via`, because §10 requires inbox-born records to be "tagged with their Discord origin" and no existing field could carry it; in-game posts pass nil and stay byte-identical. (2) Only the `post` inbox command and the board/event outbox kinds ship; the `event`/`grant`/`approve` commands and sign-up-summary/order/Marks-milestone outbox lines are refused as "unsupported" in the outbox rather than applied, because the Accept names only the board round trip and Orders (T-025) does not exist yet to summarize.
+- Why: The tag is the smallest change that makes the §10 sentence true on every client (a mirror-local note would not replicate). The deferral keeps the demo path honest: an unlanded command says so in the outbox instead of vanishing.
+- Where: `addons/Guildhall/Modules/Board.lua` (`post`, `rows`), `addons/Guildhall/Modules/Mirror.lua`, `TASKS.md` T-049.
+- Plan: T-023's Touches gained `addons/Guildhall/Modules/Board.lua` and `goose-deuce.md` in this commit; the owed §10 remainder is T-049, filed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
+## 2026-11-11 — The replicated record log does not survive a solo reload  [tech-debt]
+- Task: T-023 (found while testing it; mechanism owned by the T-017 sync block)
+- What: `ns.Sync.log` is created empty at every load and no block persists it to SavedVariables, so after a solo `/reload` every fold (board, calendar, marks) is empty until guild sync re-converges from online peers. T-023's tests pin this behaviour (rows empty after a second solo reload) and Mirror works around the outbound half with a 5-second scan ticker into the persisted outbox; the inbound half needs no workaround because `mirror_seen` is persisted.
+- Why: With guildmates online the digest exchange rebuilds the log, so this is a latency/robustness gap, not data loss — but a lone player's reload showing an empty board is a real product wart a checkpoint-to-SavedVariables would close. Fixing it belongs to the sync block, not to the mirror task that found it (scope discipline).
+- Where: `src/wow_addon_forge/blocks/sync/Core/Sync.lua` (`ns.Sync.log = ns.Log.new()`), `addons/Guildhall/Modules/Mirror.lua` (ticker comment), `TASKS.md` T-050.
+- Plan: SPEC-GUILDHALL §4/§11 speak of checkpoints and bounded SavedVariables without pinning log persistence → owed to T-050, filed in this commit. TASKS.md corrected in this commit.
+- Commit(s): this commit
+
 ## 2026-11-11 — Tracker ships without the BG win bonus and the dungeon-completed row  [deferred]
 - Task: T-022 (`docs/SPEC-GUILDHALL.md` §7 earning table, §8.4)
 - What: Tracker claims the dungeon/raid boss, battleground-completed (base 5 only), world-PvP and attendance rows. The battleground "+2 for a win" and the "Dungeon completed 15" rows are not detected: `PVP_MATCH_COMPLETE` reports the winning faction as a number and no confirmed API in the live 1.60.1 index hands the tracker the player's own faction to compare it with, and no dungeon-completion event is in the headless runtime's confirmed event set to detect or test against.

@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-023 — Guildhall Discord mirror, end to end
-      Why: The Discord mirror is the demo's closing beat (SPEC-GUILDHALL §10).
-      Accept: Built through the plugin's tools (LOOP.md rule 10). A board post authored in a simulated client appears in `wow_bridge pull` output after `client.reload()` as Discord-ready text; a `post` command sent with `wow_bridge push` becomes a `board.post` after the next reload when the loading character is an officer, and is reported refused in the outbox when it is not; an inbox item is never applied twice. `wow_check` verdict `pass`. Full gate green.
-      Touches: `addons/Guildhall/Modules/Mirror.lua`, `addons/Guildhall/Guildhall.toc`, `addons/Guildhall/Tests/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-043   Gated: none
 - [ ] T-035 — Run the in-game probe
       Why: Only the live client says which events fire and whether guild addon messages echo (INGAME-CHECKLIST section A).
       Accept: The owner installs ForgeProbe, logs in on a guilded character, runs `/forge probe`, reloads; `wow_errors` output is pasted into the task; INGAME-CHECKLIST lines 1–5 carry results; any detection the probe shows unusable gets a task.
@@ -25,6 +21,14 @@
       Touches: `docs/`, `README.md`, `TASKS.md`, `CHANGELOG.md`   Depends: T-037   Gated: owner
 
 ## Later
+- [ ] T-049 — Mirror: remaining Discord commands and outbox kinds
+      Why: SPEC-GUILDHALL §10 also promises `event`, `grant` and `approve` inbox commands and sign-up summaries, order requests and Marks milestones in the outbox; T-023 shipped the board round trip and refuses the rest as unsupported (goose-deuce.md 2026-11-11 "Mirror widened Board with an origin tag; remaining §10 surface deferred").
+      Accept: Headless: a pushed `event` command creates the event on an officer load and refuses on a member load; `grant` and `approve` follow the Marks officer rules; a sign-up writes a summary line and an approved claim crossing a 50-Mark milestone writes a milestone line. `wow_check` verdict `pass`. Full gate green.
+      Touches: `addons/Guildhall/Modules/Mirror.lua`, `addons/Guildhall/Tests/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-023   Gated: none
+- [ ] T-050 — Persist the replicated record log across reload
+      Why: A solo `/reload` currently empties every fold until guild sync re-converges (goose-deuce.md 2026-11-11 "The replicated record log does not survive a solo reload").
+      Accept: Headless: a client's board rows, events and balances are identical immediately before and after a solo `client.reload()` with no peer traffic; the persisted form is bounded by the checkpoint/compaction rules. `wow_check` verdict `pass`. Full gate green.
+      Touches: `src/wow_addon_forge/blocks/sync/`, `src/wow_addon_forge/blocks/log/`, `tests/`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-017   Gated: none
 - [ ] T-048 — Tracker: battleground win bonus and dungeon-completed row
       Why: SPEC-GUILDHALL §7 pays +2 for a battleground win and 15 for a completed dungeon; T-022 could not detect either honestly (goose-deuce.md 2026-11-11 "Tracker ships without the BG win bonus and the dungeon-completed row").
       Accept: After T-035's probe results name a usable faction read and completion signal: headless, a won battleground claims 7 and a lost one 5; a completed dungeon claims 15 once per run. `wow_check` verdict `pass`. Full gate green.
@@ -79,6 +83,10 @@
 ## Dropped
 
 ## Done
+- [x] T-023 — Guildhall Discord mirror, end to end (2026-11-11, this commit)
+      Why: The Discord mirror is the demo's closing beat (SPEC-GUILDHALL §10).
+      Accept: Built through the plugin's tools (LOOP.md rule 10). A board post authored in a simulated client appears in `wow_bridge pull` output after `client.reload()` as Discord-ready text; a `post` command sent with `wow_bridge push` becomes a `board.post` after the next reload when the loading character is an officer, and is reported refused in the outbox when it is not; an inbox item is never applied twice. `wow_check` verdict `pass`. Full gate green.
+      Touches: `addons/Guildhall/Modules/Mirror.lua`, `addons/Guildhall/Modules/Board.lua`, `addons/Guildhall/Guildhall.toc`, `addons/Guildhall/Tests/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-043   Gated: none
 - [x] T-022 — Guildhall Tracker: automatic participation (2026-11-11, this commit)
       Why: Marks must be earned by playing, not by paperwork (SPEC-GUILDHALL §8.4).
       Accept: Built through the plugin's tools (LOOP.md rule 10). Headless, with world fixtures: a dungeon boss kill in a group that is at least half guildmates authors one claim per addon user after the restriction lifts and none while it is active; the same kill in a group under half authors none; a battleground completion and a 5-kill honourable-kill delta each author a claim; attendance inside an event window authors a claim; an event that `IsEventValid` reports invalid disables its detection and the status line says so; no unit or combat API result is used in arithmetic. `wow_check` verdict `pass`. Full gate green.

@@ -154,12 +154,20 @@ function ns.Board.set_allow_members(flag)
     return ns.Board.allow_members
 end
 
-function ns.Board.post(text)
+-- [2026-11-11 T-023] The optional via tag records a post's origin when it was
+-- authored on behalf of an outside channel (SPEC-GUILDHALL §10: inbox commands
+-- become records "tagged with their Discord origin"). It rides in the payload,
+-- so every client folding the log sees the same tag; in-game posts pass nil
+-- and their payloads stay byte-identical to the T-043 shape.
+function ns.Board.post(text, via)
     if type(text) ~= "string" or text == "" then
         return nil, "empty"
     end
     if #text > 500 then
         return nil, "too-long"
+    end
+    if via ~= nil and (type(via) ~= "string" or via == "" or #via > 32) then
+        return nil, "bad-via"
     end
     local self = self_name()
     if self == "" then
@@ -168,7 +176,11 @@ function ns.Board.post(text)
     if not ns.Board.allow_members and not is_officer(role_of(self)) then
         return nil, "not-allowed"
     end
-    local record = author("board.post", { text = text })
+    local payload = { text = text }
+    if via ~= nil then
+        payload.via = via
+    end
+    local record = author("board.post", payload)
     return record.a .. ":" .. record.s
 end
 
@@ -284,6 +296,10 @@ function ns.Board.rows()
                 a = post.a,
                 t = type(post.t) == "number" and post.t or 0,
                 text = type(post.p) == "table" and type(post.p.text) == "string" and post.p.text or "",
+                -- [2026-11-11 T-023] The origin tag, present only on posts an
+                -- outside channel authored through the mirror; absent (nil)
+                -- keeps pre-T-023 rows and payloads exactly as they were.
+                via = type(post.p) == "table" and type(post.p.via) == "string" and post.p.via or nil,
                 pinned = pinned[id] == true,
                 comments = comments[id] or {},
             }
