@@ -17,7 +17,7 @@ Format of a result: `Result: PASS | FAIL | NOT RUN — <date> <build> — <what 
 4. Recorded by the probe — event validity and registration for
    `ENCOUNTER_END`, `BOSS_KILL`, `PLAYER_PVP_KILLS_CHANGED`, `PARTY_KILL`,
    `UNIT_DIED`, `PVP_MATCH_COMPLETE`, `GROUP_ROSTER_UPDATE`.
-   Result: PASS — 2026-11-11 1.60.1.70888 — all 11 probed events valid (incl. COMBAT_LOG_EVENT_UNFILTERED); registration recorded true, BUT 4 attempts per run were blocked (ADDON_ACTION_FORBIDDEN, count 8 over two runs) so those 4 `registered` values are unreliable pre-T-052; T-052 records IsEventRegistered truth — the 4 names are owed to the T-036 retest
+   Result: PASS — 2026-11-11 1.60.1.70888 — all 11 probed events valid (incl. COMBAT_LOG_EVENT_UNFILTERED); registration recorded true pre-T-052, BUT one attempt per run was blocked (ADDON_ACTION_FORBIDDEN; count 8 over the day's runs — corrected 13:40, the first reading said 4 per run); the T-052 retest names it exactly: COMBAT_LOG_EVENT_UNFILTERED valid=true registered=false, the other 10 register fine; T-058 stops attempting it
 5. Recorded by the probe — guild addon-message echo and its result enum.
    Result: PASS — 2026-11-11 1.60.1.70888 — guild echo sent=true, send_result=0, echo_received=true; sender arrived as "Friar Baggins" (space, no -Realm suffix) — identity-format risk filed as T-054
 

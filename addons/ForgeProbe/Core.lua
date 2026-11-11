@@ -201,16 +201,19 @@ function ns:RunProbe(announce)
         local validOk, isValid = pcall(C_EventUtils.IsEventValid, evName)
         local valid = validOk and isValid == true
         local registered = false
-        if valid then
-            -- [2026-11-11 T-052] Live-client evidence (T-035): 4 of the 11
-            -- probed events are protected in client 1.60.1 — registering them
-            -- from addon code raises ADDON_ACTION_FORBIDDEN and a modal, yet
-            -- the pcall still reports success, so the old loop recorded
-            -- registered=true for calls the client had blocked. Two changes:
-            -- the scratch frame is never unregistered (the pair doubled the
-            -- protected calls), and `registered` is now the client's own
-            -- IsEventRegistered answer after the attempt, so a blocked
-            -- registration records false and names itself in the table.
+        -- [2026-11-11 T-058] Never attempt to register an event the live
+        -- client has proven protected: the attempt itself fires
+        -- ADDON_ACTION_FORBIDDEN and the modal. The discovery is already
+        -- captured (T-035/T-052 retest: COMBAT_LOG_EVENT_UNFILTERED is the
+        -- ONLY blocked one of the 11 — the earlier "4" was one block per
+        -- run across four runs, corrected here); recording registered=false
+        -- without attempting keeps the evidence and drops the dialog.
+        local known_blocked = evName == "COMBAT_LOG_EVENT_UNFILTERED"
+        if valid and not known_blocked then
+            -- [2026-11-11 T-052] `registered` is the client's own
+            -- IsEventRegistered answer after the attempt, never the pcall's
+            -- success flag (a blocked registration still lets pcall report
+            -- success, which is how the pre-T-052 table lied).
             pcall(probeScratchFrame.RegisterEvent, probeScratchFrame, evName)
             local chkOk, isRegistered = pcall(
                 probeScratchFrame.IsEventRegistered, probeScratchFrame, evName

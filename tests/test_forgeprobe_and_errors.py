@@ -432,3 +432,14 @@ def test_wow_errors_registration_and_error_boundaries(
     assert payload["ok"] is False
     assert payload["error"]["code"] == "lua-vm-unavailable"
     assert "no Lua VM here" in payload["error"]["message"]
+
+
+def test_probe_never_registers_known_blocked_event(fake_fs_factory: Any) -> None:
+    # [2026-11-11 T-058] Live evidence: registering COMBAT_LOG_EVENT_UNFILTERED
+    # is the one blocked call per probe run. The probe must record it without
+    # attempting registration (no scratch registration, registered False).
+    _world, client = _probe_world(fake_fs_factory)
+    assert client.slash("/forge probe") is True
+    probe = _probe_db(client)["probe"]
+    assert probe["events"]["COMBAT_LOG_EVENT_UNFILTERED"]["registered"] is False
+    assert client.errors == []

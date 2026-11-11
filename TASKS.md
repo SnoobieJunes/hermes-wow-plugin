@@ -83,6 +83,10 @@
 ## Dropped
 
 ## Done
+- [x] T-058 — ForgeProbe: skip registering the known-blocked combat-log event (2026-11-11, this commit)
+      Why: Live retest after T-052: exactly one ADDON_ACTION_FORBIDDEN per probe run, and the probe now truthfully names it — COMBAT_LOG_EVENT_UNFILTERED (valid=true, registered=false; the other 10 register fine). Attempting it is the only remaining modal source.
+      Accept: Headless: `/forge probe` records COMBAT_LOG_EVENT_UNFILTERED registered=false without a RegisterEvent attempt (scratch frame not registered for it); all other probe behavior unchanged. Full gate green. Live retest (zero forbidden entries from a probe run) under T-036.
+      Touches: `addons/ForgeProbe/Core.lua`, `tests/`, `docs/INGAME-CHECKLIST.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-052   Gated: none
 - [x] T-057 — Board tab: post box and refresh-on-show for every tab (2026-11-11, this commit)
       Why: Live T-036 evidence: the Board tab renders but offers no way to write a post, and every tab snapshots its lines at first build, so nothing new ever appears — the demo's centre cannot be used in game.
       Accept: Headless: typing in the Board post box and clicking Post authors a board.post that appears in the tab's lines; re-showing any tab refreshes its lines from the fold (a post authored elsewhere appears); laziness preserved (nothing builds before first show). `wow_check` verdict `pass`. Full gate green. Live retest under T-036.
