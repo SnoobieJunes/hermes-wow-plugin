@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-059 — Added the Discord bridge relay (`scripts/discord_bridge.py`): board posts can be delivered to a real Discord channel and Discord posts pushed back onto the board after `/reload`; the webhook URL comes from `$GUILDHALL_DISCORD_WEBHOOK` and is never committed
 2026-11-11 — T-054 — Fixed officers being refused as "not-allowed" in the live client: role lookup now matches the bare character name Forever's roster uses, not only the Name-Realm form records carry
 2026-11-11 — T-058 — ForgeProbe no longer attempts to register COMBAT_LOG_EVENT_UNFILTERED (proven client-blocked live; the attempt itself raised the Blizzard-UI modal once per probe run) and records it registered=false without trying
 2026-11-11 — T-057 — The Board tab can finally be written on: a post box with a Post button (Enter works too), and every tab now repaints from current guild state each time it is shown instead of freezing its first snapshot

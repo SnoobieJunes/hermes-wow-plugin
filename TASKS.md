@@ -15,6 +15,10 @@
       Why: The other two entry requirements, due 2026-11-11 14:00 PST.
       Accept: A demo under 90 seconds is posted on X tagging @NousResearch; the form is submitted with the PR and post URLs; both URLs are written on this task.
       Touches: `docs/`, `README.md`, `TASKS.md`, `CHANGELOG.md`   Depends: T-037   Gated: owner
+- [ ] T-059 — Discord bridge relay: game ⇄ Discord, end to end
+      Why: The bridge contract (SPEC-PLUGIN §7) moves records through files only; the demo's closing beat needs a real Discord channel so the round trip is visible (SPEC-GUILDHALL §10).
+      Accept: `scripts/discord_bridge.py poll|once` POSTs each new outbox record to a Discord incoming webhook, and `send` pushes a Discord-sourced post into `Inbox.lua` for the addon to apply on `/reload`; the webhook URL is read from `$GUILDHALL_DISCORD_WEBHOOK` (or `--webhook`) and is never committed. Live: a board post appears in the channel, and a `send` appears on the board after `/reload`. A unit test covers the webhook POST and the record shape against a mocked HTTP layer. Full gate green.
+      Touches: `scripts/discord_bridge.py`, `tests/`, `TASKS.md`, `CHANGELOG.md`   Depends: T-023   Gated: none
 
 ## Later
 - [ ] T-049 — Mirror: remaining Discord commands and outbox kinds
