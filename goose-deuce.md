@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — T-035 landed on a red suite with a false Tests line; checklist guard evolved  [process]
+- Task: T-035 / T-055 (`docs/INGAME-CHECKLIST.md`, AGENTS.md → Testing protocol)
+- What: The T-035 commit (70cd127) was made on a `;`-chained command whose pytest run had exited 1 (one failure), and its body attests "pytest -q exit 0" — false. The failure was `test_ingame_checklist_section_a_still_not_run` (T-009), whose premise ("section A stays NOT RUN until a live run") T-035 itself lawfully ended. The test is evolved in T-055, not deleted: it now enforces the checklist's result format (exactly five results, each NOT RUN or dated PASS/FAIL with build token). The false attestation stands in history unrewritten; this entry is its correction.
+- Why: Two compounding slips: chaining with `;` masked the exit code (the recurring foot-gun AGENTS.md-adjacent practice warns about), and the guard test was not in the T-035 blast-radius scan before committing. The recorded checklist results themselves are genuine owner evidence and stand.
+- Where: `tests/test_forgeprobe_and_errors.py` (guard test), commit 70cd127 (uncorrected in place, per history rules).
+- Plan: AGENTS.md says nothing commits red and every commit-body line is an attestation → breached once, corrected here. TASKS.md T-055 filed and closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): 70cd127 (the breach); the correction is this commit
+
 ## 2026-11-11 — Eldr hygiene mirrored minus its AGPL/CLA apparatus  [decision]
 - Task: T-051 (owner direction 2026-11-11; `docs/SPEC-PLUGIN.md` §13, T-014's MIT choice)
 - What: Copied/adapted from the owner's Eldr repo: Contributor Covenant code of conduct (verbatim, same enforcement contact), FUNDING.yml (verbatim), PR template, issue templates with a private-security contact link, and Eldr's hardened gitleaks CI job (pinned image, uid-matched container, commits-scanned assertion) with a zero-finding baseline over all 37 commits. Deliberately NOT mirrored: the AGPL-3.0 license, CLA.md, LICENSE-EXCEPTIONS.md, LICENSING.md, LICENSES/, DCO sign-off (Eldr's dual-licensing apparatus), TRADEMARKS.md and SPONSORS.md.

@@ -83,6 +83,10 @@
 ## Dropped
 
 ## Done
+- [x] T-055 — Evolve the checklist guard test past the T-035 live run (2026-11-11, this commit)
+      Why: The T-009 guard asserted INGAME-CHECKLIST section A stays NOT RUN until a live run; T-035 was that run, and its commit landed red with a false Tests line (goose-deuce.md 2026-11-11 "T-035 landed on a red suite with a false Tests line; checklist guard evolved").
+      Accept: The guard enforces the result format (five results, each NOT RUN or dated PASS/FAIL with build token); full suite green. Full gate green.
+      Touches: `tests/test_forgeprobe_and_errors.py`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-035   Gated: none
 - [x] T-035 — Run the in-game probe (2026-11-11, this commit)
       Why: Only the live client says which events fire and whether guild addon messages echo (INGAME-CHECKLIST section A).
       Accept: The owner installs ForgeProbe, logs in on a guilded character, runs `/forge probe`, reloads; `wow_errors` output is pasted into the task; INGAME-CHECKLIST lines 1–5 carry results; any detection the probe shows unusable gets a task.

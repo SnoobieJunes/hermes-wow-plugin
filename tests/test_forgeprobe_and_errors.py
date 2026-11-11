@@ -114,12 +114,23 @@ def test_forgeprobe_passes_wow_check_via_tool_and_directly(tmp_path: Path) -> No
     assert direct["findings"] == []
 
 
-def test_ingame_checklist_section_a_still_not_run() -> None:
+def test_ingame_checklist_section_a_results_are_well_formed() -> None:
     lines = (REPO / "docs" / "INGAME-CHECKLIST.md").read_text(encoding="utf-8").splitlines()
     # [2026-11-11 T-009] Lines 10-23 are section A (items 1-5): a headless
     # pass must never be recorded there, so all five stay NOT RUN.
+    # [2026-11-11 T-055] The T-035 live run lawfully ended that era. The
+    # guard now enforces the checklist's own result format instead: exactly
+    # five results, each either NOT RUN or a dated PASS/FAIL carrying a
+    # build-looking version token, so a result can never be vague.
+    import re
+
     section_a = "\n".join(lines[9:23])
-    assert section_a.count("Result: NOT RUN") == 5
+    results = re.findall(r"Result: (.+)", section_a)
+    assert len(results) == 5, results
+    for result in results:
+        assert result == "NOT RUN" or re.match(r"(PASS|FAIL) — \d{4}-\d{2}-\d{2} \S+ — ", result), (
+            result
+        )
 
 
 def test_buggy_addon_error_lands_in_forgeprobe_ring_via_wow_errors(
