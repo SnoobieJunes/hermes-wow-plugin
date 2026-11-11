@@ -483,6 +483,9 @@ class ForgeTools:
         clock: Callable[[], float] = time.time,
         data_dir: str | os.PathLike[str] | None = None,
         cursor_dir: str | os.PathLike[str] | None = None,
+        configured_root: str | None = None,
+        configured_flavor: str | None = None,
+        configured_source: str | None = None,
     ) -> None:
         self._fs = fs if fs is not None else RealFileSystem()
         self._default_roots = default_roots
@@ -491,6 +494,10 @@ class ForgeTools:
         self._clock = clock
         self._data_dir = data_dir
         self._cursor_dir = cursor_dir
+        root_text = configured_root.strip() if isinstance(configured_root, str) else ""
+        self._configured_root = root_text or None
+        self._configured_flavor = configured_flavor
+        self._configured_source = configured_source
 
     def env_result(self, args: object = None) -> dict[str, Any]:
         """Return the ``wow_env`` result as plain data.
@@ -530,7 +537,12 @@ class ForgeTools:
         root = arguments.get("root")
         roots: Sequence[str] | None
         if root is None or root == "":
-            roots = self._default_roots
+            # [2026-11-11 T-039] A configured wow_root is the only place searched.
+            # An explicit root argument still wins, so a call can look elsewhere.
+            if self._configured_root:
+                roots = [self._configured_root]
+            else:
+                roots = self._default_roots
         elif not isinstance(root, str):
             return error_result(
                 "bad-argument",
@@ -651,10 +663,16 @@ class ForgeTools:
 
     def _api_action(self, action: str, arguments: Mapping[str, Any]) -> dict[str, Any]:
         """Run one validated ``wow_api`` action; ``ApiIndexError`` carries every refusal."""
-        flavor = normalise_flavor(arguments.get("flavor"))
+        raw_flavor = arguments.get("flavor")
+        if raw_flavor is None or raw_flavor == "":
+            raw_flavor = self._configured_flavor
+        flavor = normalise_flavor(raw_flavor)
         store = IndexStore(self._cache_dir if self._cache_dir is not None else default_cache_dir())
         if action == "sync":
-            return self._api_sync(store, flavor, arguments.get("source"))
+            source = arguments.get("source")
+            if (source is None or source == "") and self._configured_source:
+                source = self._configured_source
+            return self._api_sync(store, flavor, source)
         # [2026-11-11 T-005] Every query action loads the cached index first, so a missing or
         # stale index is the same explicit error (with the sync call to run) from all of them.
         index = store.load(flavor)

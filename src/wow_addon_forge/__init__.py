@@ -53,7 +53,24 @@ def register_plugin(ctx: Any) -> dict[str, Any]:
     # [2026-11-11 T-003] Imported here, not at module top: tools.py imports this package for
     # TOOLSET, so a top-level import would be a cycle, and the plugin root stays import-light.
     from wow_addon_forge.cli import register_surfaces
-    from wow_addon_forge.tools import register_tools
+    from wow_addon_forge.tools import ForgeTools, register_tools
 
     register_surfaces(ctx)
-    return {"plugin": PLUGIN_ID, "version": __version__, "tools": register_tools(ctx)}
+    get_config = getattr(ctx, "get_config", None)
+
+    def setting(key: str, default: str) -> str:
+        if not callable(get_config):
+            return default
+        value = get_config(key, default)
+        return default if value is None else str(value)
+
+    # [2026-11-11 T-039] Same read as hermes-coreai: ctx.get_config(key, default).
+    wow_root = setting("wow_root", "").strip()
+    flavor = setting("flavor", "_forever_").strip() or "_forever_"
+    api_source = setting("api_source", "auto").strip() or "auto"
+    tools = ForgeTools(
+        configured_root=wow_root or None,
+        configured_flavor=flavor,
+        configured_source=api_source,
+    )
+    return {"plugin": PLUGIN_ID, "version": __version__, "tools": register_tools(ctx, tools=tools)}

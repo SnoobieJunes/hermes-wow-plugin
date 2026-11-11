@@ -31,3 +31,21 @@ provides_tools:
   - wow_bridge
   - wow_new
 provides_hooks: []
+config_schema:
+  wow_root:
+    type: str
+    default: ""
+    description: "WoW install folder. Empty auto-detects the two default locations."
+  flavor:
+    type: str
+    default: "_forever_"
+    description: "Flavor folder later tools assume. Default _forever_."
+  api_source:
+    type: str
+    default: auto
+    description: "Where wow_api sync reads documentation: auto, export, or mirror."
+    enum:
+      - auto
+      - export
+      - mirror
+

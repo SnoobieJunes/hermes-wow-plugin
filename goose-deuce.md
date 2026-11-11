@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — wow_root is the only search, flavor and api_source are defaults  [decision]
+- Task: T-039 (`docs/SPEC-PLUGIN.md` §11)
+- What: Empty `wow_root` means the two default install folders. A set `wow_root` is the only folder `wow_env` searches when the call omits `root`; an explicit `root` still wins. Omitted `wow_api` `flavor` and `source` use the settings (`_forever_` and `auto`).
+- Why: SPEC-PLUGIN §11 names the settings and not which call wins. A setting that lost to a test-injected root list would not honour `wow_root`.
+- Where: `src/wow_addon_forge/__init__.py`, `src/wow_addon_forge/tools.py`, `plugin.yaml`.
+- Plan: SPEC-PLUGIN §11 left the precedence unspecified → pinned here. TASKS.md T-039 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — status reports the forever flavor  [decision]
 - Task: T-013 (`docs/SPEC-PLUGIN.md` §2)
 - What: `/wow status` and `hermes wow status` print the `_forever_` flavor when the install has one, not the first flavor in folder order. `check` exits 1 when `wow_check` verdict is `fail`. The skill, slash command, and CLI are registered only when the context has those methods, so a tool-only test double still loads.
