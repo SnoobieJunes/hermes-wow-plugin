@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-042 — Guildhall, scaffolded by the plugin
-      Why: The addon is the plugin's acceptance test; it starts from `wow_new`, not from hand-written files (LOOP.md rule 10).
-      Accept: The T-003 stub under `addons/Guildhall` and its skeleton test are removed. `wow_new`, called as a tool in the session, creates `addons/Guildhall` with every block, name `Guildhall`, slash `/gh` and the Classic theme. `wow_check` and `wow_test`, called as tools, return `pass`, and their JSON summaries are quoted in the commit body. The five-client convergence test runs against the scaffolded addon. Full gate green.
-      Touches: `addons/Guildhall/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-041, T-046   Gated: none
 - [ ] T-043 — Guildhall Board
       Why: The first thing a member sees, and the demo's centre (SPEC-GUILDHALL §8.1).
       Accept: Built through the plugin's tools. Headless: posting through the Board's public function creates a `board.post` that a second client shows in its row model; pins sort first; `board.remove` by a non-author member is rejected; the Board tab builds only when first shown. `wow_check` and `wow_test` tool verdicts `pass`, quoted in the commit body. Full gate green.
@@ -95,6 +91,10 @@
 ## Dropped
 
 ## Done
+- [x] T-042 — Guildhall, scaffolded by the plugin (2026-11-11, this commit)
+      Why: The addon is the plugin's acceptance test; it starts from `wow_new`, not from hand-written files (LOOP.md rule 10).
+      Accept: The T-003 stub under `addons/Guildhall` and its skeleton test are removed. `wow_new`, called as a tool in the session, creates `addons/Guildhall` with every block, name `Guildhall`, slash `/gh` and the Classic theme. `wow_check` and `wow_test`, called as tools, return `pass`, and their JSON summaries are quoted in the commit body. The five-client convergence test runs against the scaffolded addon. Full gate green.
+      Touches: `addons/Guildhall/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-041, T-046   Gated: none
 - [x] T-046 — Add an optional slash command to `wow_new` (2026-11-11, this commit)
       Why: T-042 requires Guildhall's slash to be `/gh`, but the scaffold derives `/guildhall` from the addon name and `wow_new` has no slash parameter — a missing plugin capability found before the addon task could start (LOOP.md rule 10).
       Accept: `wow_new` accepts an optional `slash` (default `/` + lowercased name); a scaffold created with `slash="/gh"` registers `/gh` headless (its bundled test asserts `/gh`), invalid slash values are refused with a stable error, and existing default-slash scaffolds are unchanged. Full gate green.

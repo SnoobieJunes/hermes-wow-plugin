@@ -30,8 +30,11 @@ ships with the plugin and passes `wow_check`; it has not been run in the live cl
 the headless runtime is in. A documented secret return is opaque while a restriction
 is active; arithmetic and concatenation on it are `secret-value` findings, and a
 widget setter may hold the value. `issecretvalue` is true for that value. The static
-`restricted-api` rule still flags an unguarded secret-returning call. Guildhall is one skeleton file that passes
-`wow_check`; it has not been loaded in the live game client. Everything else below is
+`restricted-api` rule still flags an unguarded secret-returning call. Guildhall has been scaffolded by
+`wow_new` itself (every building block, slash `/gh`, Classic theme) in a fresh Hermes
+session and passes `wow_check` and `wow_test`; five simulated clients running it
+converge on one state. Its feature modules (Board first) are still to come, and it has
+not been loaded in the live game client. Everything else below is
 planned, and nothing is claimed to work until its task is closed in `TASKS.md`.
 
 ## Why a plugin and not a prompt

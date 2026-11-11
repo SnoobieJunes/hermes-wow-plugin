@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-042 — Guildhall scaffolded by the plugin itself: a fresh Hermes session created `addons/Guildhall` with `wow_new` (every block, slash `/gh`, Classic theme), replacing the hand-written stub; `wow_check` pass, `wow_test` 3/3, and five simulated clients converge under loss
 2026-11-11 — T-046 — `wow_new` accepts an optional `slash` (for example `/gh` for Guildhall) instead of always deriving `/<name>`; invalid slashes are refused as `bad-slash` and nothing is written
 2026-11-11 — T-041 — Plugin-done gate passed: a fresh Hermes session on the free LongCat model built a throwaway addon end to end with only the `wow_*` tools against a fake install (`docs/gate/T-041.md`). The gate found and fixed unguarded restricted `UnitName` calls in the bridge/sync blocks, and `wow_install`, `wow_savedvars`, `wow_errors` and `wow_bridge` gained a per-call `root`
 2026-11-11 — T-044 — `wow_api sync` now indexes a local `BlizzardInterfaceCode` client export when one is on disk (`source export`, and ahead of the mirrors under `auto`) with no network call; `auto` without an export falls back to the mirrors and says so in `note`, and `export` without one returns `export-not-found`

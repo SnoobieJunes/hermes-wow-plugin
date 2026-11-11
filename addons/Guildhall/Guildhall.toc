@@ -1,13 +1,23 @@
 ## Interface: 16001
 ## Title: Guildhall
-## Notes: Guild management for World of Warcraft: Forever.
-## Author: Auston (@SnoobieJunes)
-## Version: 0.1.0
+## Notes: Scaffolded by wow_new for Guildhall.
+## SavedVariables: GuildhallDB
+## X-Forge-Bridge: 1
 
-# [2026-11-11 T-003] Guildhall addon manifest (created 2026-11-11). Walking skeleton: one file.
-# Invariant: every Lua file the addon runs is listed below, in load order. SavedVariables, the
-# bridge header and the remaining Core files are added by the tasks that implement them.
-# Headers come first and comments sit with the file list, the layout of a TOC already installed
-# for this client on the development machine. Whether the live client loads this file is the
-# in-game half (docs/INGAME-CHECKLIST.md); a headless run does not show it.
-Core\Namespace.lua
+Core/Namespace.lua
+Core/Dispatch.lua
+Core/Clock.lua
+Core/Codec.lua
+Core/Store.lua
+Core/Slash.lua
+Core/Log.lua
+Core/Reduce.lua
+Core/Chunk.lua
+Core/Throttle.lua
+Core/Restrict.lua
+Core/Sync.lua
+Core/Trust.lua
+UI/Theme.lua
+UI/Window.lua
+Bridge.lua
+Inbox.lua
