@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-012 — `wow_bridge` and the bridge contract
-      Why: The Discord link is two files; the contract makes any addon able to use it (SPEC-PLUGIN §7).
-      Accept: With a SavedVariables fixture and a temporary addon folder: `pull` returns only records past the cursor and advances it; a second `pull` returns none; `push` writes an `Inbox.lua` that compiles in the Lua 5.1 VM and keeps earlier unconsumed items; `push` to an addon without `## X-Forge-Bridge: 1` is refused; `uv run python -m wow_addon_forge bridge pull --format discord` prints one line per record and nothing when there is none. Full gate green.
-      Touches: `src/wow_addon_forge/bridge.py`, `src/wow_addon_forge/tools.py`, `src/wow_addon_forge/__main__.py`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-010   Gated: none
 - [ ] T-015 — Building block `core`: namespace, dispatcher, clock, store, codec, slash
       Why: Every addon the plugin scaffolds stands on these, Guildhall first (SPEC-PLUGIN §8, SPEC-GUILDHALL §3).
       Accept: The block is Lua templates with an addon-name token under `src/wow_addon_forge/blocks/core/`. Lua tests run by pytest prove: the codec round-trips 500 random nested tables (strings with every byte 1–255, integers, floats, booleans), its output never contains byte 0, and 200 mutated inputs are rejected by returning nil plus a message, never by raising; the store migrates a version-1 fixture; the slash command registers under the instantiated addon's name. An addon instantiated from the block gets `wow_check` verdict `pass`. Full gate green.
@@ -147,6 +143,10 @@
 ## Dropped
 
 ## Done
+- [x] T-012 — `wow_bridge` and the bridge contract (2026-11-11, this commit)
+      Why: The Discord link is two files; the contract makes any addon able to use it (SPEC-PLUGIN §7).
+      Accept: With a SavedVariables fixture and a temporary addon folder: `pull` returns only records past the cursor and advances it; a second `pull` returns none; `push` writes an `Inbox.lua` that compiles in the Lua 5.1 VM and keeps earlier unconsumed items; `push` to an addon without `## X-Forge-Bridge: 1` is refused; `uv run python -m wow_addon_forge bridge pull --format discord` prints one line per record and nothing when there is none. Full gate green.
+      Touches: `src/wow_addon_forge/bridge.py`, `src/wow_addon_forge/tools.py`, `src/wow_addon_forge/__main__.py`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-010   Gated: none
 - [x] T-010 — `wow_savedvars` and `wow_install` (2026-11-11, this commit)
       Why: Reading game data and installing safely are the two file seams to the client (SPEC-PLUGIN §3 write rules).
       Accept: Against a temporary fake install: SavedVariables with nested tables, long strings and negative numbers convert to JSON; a dotted `path` returns one subtree; install copies the addon, backs up a pre-existing folder into the plugin data directory, refuses when `wow_check` fails unless `force`, writes nothing under `dry_run`, refuses `../` and absolute names, and reports `reload` versus `restart` correctly. No test touches `/Applications`. Full gate green.

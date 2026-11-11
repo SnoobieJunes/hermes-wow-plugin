@@ -14,13 +14,15 @@ Two things in one repository:
 
 For WoW players and guild officers who are not programmers.
 
-Status (2026-11-11, T-010): Hermes loads the plugin and seven tools work: `wow_env`
+Status (2026-11-11, T-012): Hermes loads the plugin and eight tools work: `wow_env`
 (install and addon detection), `wow_api` (cached WoW: Forever 1.60.1 API index),
 `wow_check` (six-stage static and headless addon verification), `wow_test`
 (isolated multi-client headless Lua 5.1 test runner), `wow_errors` (reads
 ForgeProbe's SavedVariables), `wow_savedvars` (reads any addon's SavedVariables as
-JSON), and `wow_install` (copies or links an addon into `Interface/AddOns` after
-`wow_check` passes, backing up a replaced folder outside the game). `addons/ForgeProbe`
+JSON), `wow_install` (copies or links an addon into `Interface/AddOns` after
+`wow_check` passes, backing up a replaced folder outside the game), and `wow_bridge`
+(pulls an outbox past a cursor, or pushes `Inbox.lua` for an addon that declares
+`## X-Forge-Bridge: 1`). `addons/ForgeProbe`
 ships with the plugin and passes `wow_check`; it has not been run in the live client
 (`docs/INGAME-CHECKLIST.md` section A is still `NOT RUN`). Secret-value simulation in
 the headless runtime arrives in T-034; until it lands, `issecretvalue` returns `false`
@@ -96,7 +98,10 @@ only, writes nothing, and never prints an account folder name), `wow_savedvars`
 (reads one addon's SavedVariables the same way, still without printing an account
 name), and `wow_install` (writes only `<install>/<flavor>/Interface/AddOns/<name>`
 and a backup under `~/.hermes/cache/wow-addon-forge/backups`, never inside the game
-folder). `wow_errors` and `wow_savedvars` have no command-line twin yet.
+folder). `wow_errors` and `wow_savedvars` have no command-line twin yet. `wow_bridge`
+also has `python -m wow_addon_forge bridge pull --format discord`, which prints one
+line per new outbox record and nothing when there is none. Latency in each direction
+is one `/reload` or logout. The plugin holds no Discord credential.
 
 - Network: downloads of the public API documentation mirrors, only when you run
   an API sync.

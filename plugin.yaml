@@ -27,4 +27,5 @@ provides_tools:
   - wow_errors
   - wow_savedvars
   - wow_install
+  - wow_bridge
 provides_hooks: []

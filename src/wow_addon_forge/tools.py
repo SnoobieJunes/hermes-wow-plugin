@@ -8,7 +8,8 @@ Invariants owned by this file:
 - ``wow_env`` writes nothing. ``wow_api`` writes only the API index cache, and only on ``sync``,
   which is also the plugin's only network call. ``wow_check``, ``wow_test``, ``wow_errors`` and
   ``wow_savedvars`` write nothing. ``wow_install`` writes only the destination addon folder and
-  a backup under the plugin data directory.
+  a backup under the plugin data directory. ``wow_bridge`` writes the pull cursor under the
+  plugin data directory and, on push, only ``Inbox.lua`` inside a bridge-enabled addon.
 """
 
 from __future__ import annotations
@@ -30,6 +31,13 @@ from wow_addon_forge.apidocs import (
     default_cache_dir,
     fetch_mirror_bundle,
     normalise_flavor,
+)
+from wow_addon_forge.bridge import (
+    BridgeError,
+    bridge_status,
+    default_cursor_dir,
+    pull_outbox,
+    push_inbox,
 )
 from wow_addon_forge.check import check_addon, run_addon_tests
 from wow_addon_forge.env import DEFAULT_ROOTS, FileSystem, RealFileSystem, detect_installs
@@ -313,6 +321,53 @@ WOW_INSTALL_SCHEMA: dict[str, Any] = {
 }
 
 
+_BRIDGE_CALL_HINT = (
+    'Call wow_bridge with an object such as {"action": "pull", "addon": "Guildhall"}.'
+)
+WOW_BRIDGE_ACTIONS = ("pull", "push", "status")
+
+WOW_BRIDGE_SCHEMA: dict[str, Any] = {
+    "name": "wow_bridge",
+    "description": (
+        "Pull an addon's outbox past the stored cursor, or push records into Inbox.lua. "
+        "Push writes only that file, and only when the TOC declares X-Forge-Bridge: 1."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {
+                "type": "string",
+                "enum": ["pull", "push", "status"],
+                "description": "pull, push, or status.",
+            },
+            "addon": {
+                "type": "string",
+                "description": "Optional on pull when only one bridge addon is installed.",
+            },
+            "records": {
+                "type": "array",
+                "description": "push: records to append ({id, t, kind, data, via}).",
+            },
+            "flavor": {
+                "type": "string",
+                "description": "Optional game flavor (default: forever / _forever_).",
+            },
+            "account": {
+                "type": "string",
+                "description": "Optional account folder when more than one holds SavedVariables.",
+            },
+            "format": {
+                "type": "string",
+                "enum": ["json", "discord"],
+                "description": "discord adds one line per record. The tool still returns JSON.",
+            },
+        },
+        "required": ["action"],
+        "additionalProperties": False,
+    },
+}
+
+
 def to_json(payload: Mapping[str, Any]) -> str:
     """Serialise ``payload`` as the JSON text a Hermes tool handler returns.
 
@@ -387,6 +442,7 @@ class ForgeTools:
         cache_dir: str | os.PathLike[str] | None = None,
         clock: Callable[[], float] = time.time,
         data_dir: str | os.PathLike[str] | None = None,
+        cursor_dir: str | os.PathLike[str] | None = None,
     ) -> None:
         self._fs = fs if fs is not None else RealFileSystem()
         self._default_roots = default_roots
@@ -394,6 +450,7 @@ class ForgeTools:
         self._cache_dir = cache_dir
         self._clock = clock
         self._data_dir = data_dir
+        self._cursor_dir = cursor_dir
 
     def env_result(self, args: object = None) -> dict[str, Any]:
         """Return the ``wow_env`` result as plain data.
@@ -1061,6 +1118,125 @@ class ForgeTools:
         """Handle a ``wow_install`` tool call and return its result as JSON text."""
         return to_json(self.install_result(args))
 
+    def _cursor_directory(self) -> str:
+        if self._cursor_dir is not None:
+            return os.fspath(self._cursor_dir)
+        return os.fspath(default_cursor_dir())
+
+    def bridge_result(self, args: object = None) -> dict[str, Any]:
+        """Return the ``wow_bridge`` result as plain data.
+
+        Why this exists:
+            Pull and push share one envelope. Pull advances a cursor outside the
+            game folder; push writes only ``Inbox.lua`` and only after the TOC opts in.
+
+        Args:
+            args: ``action`` (``pull``, ``push`` or ``status``), optional ``addon``,
+                ``records`` (push), ``flavor``, ``account`` and ``format``.
+
+        Returns:
+            ``{"ok": True, ...}`` or an error result. ``format: discord`` adds ``lines``
+            but the handler still returns JSON; the CLI prints the lines.
+
+        Failure modes:
+            Never raises. A disabled bridge, a bad cursor and a SavedVariables failure
+            are error results, and push writes nothing in those cases.
+        """
+        if not isinstance(args, Mapping):
+            return error_result(
+                "bad-argument",
+                f"wow_bridge arguments must be an object, got {type(args).__name__}",
+                _BRIDGE_CALL_HINT,
+            )
+        action = args.get("action")
+        if action not in WOW_BRIDGE_ACTIONS:
+            return error_result(
+                "bad-argument",
+                f"action must be pull, push or status, got {action!r}",
+                _BRIDGE_CALL_HINT,
+            )
+        for key in ("addon", "flavor", "account", "format"):
+            value = args.get(key)
+            if value is not None and not isinstance(value, str):
+                return error_result(
+                    "bad-argument",
+                    f"{key} must be a string, got {type(value).__name__}",
+                    _BRIDGE_CALL_HINT,
+                )
+        roots = self._default_roots if self._default_roots is not None else DEFAULT_ROOTS
+        cursor_dir = self._cursor_directory()
+        try:
+            if action == "pull":
+                report = pull_outbox(
+                    self._fs,
+                    roots=roots,
+                    cursor_dir=cursor_dir,
+                    addon=args.get("addon"),
+                    flavor=args.get("flavor"),
+                    account=args.get("account"),
+                )
+            elif action == "status":
+                report = bridge_status(
+                    self._fs,
+                    roots=roots,
+                    cursor_dir=cursor_dir,
+                    addon=args.get("addon"),
+                    flavor=args.get("flavor"),
+                    account=args.get("account"),
+                )
+            else:
+                records = args.get("records")
+                if records is None:
+                    records = []
+                if not isinstance(records, list):
+                    return error_result(
+                        "bad-argument",
+                        f"records must be an array, got {type(records).__name__}",
+                        _BRIDGE_CALL_HINT,
+                    )
+                addon = args.get("addon")
+                if not isinstance(addon, str) or not addon.strip():
+                    return error_result(
+                        "bad-argument",
+                        "wow_bridge push needs addon: the installed addon folder name",
+                        _BRIDGE_CALL_HINT,
+                    )
+                report = push_inbox(
+                    self._fs,
+                    roots=roots,
+                    addon=addon,
+                    records=records,
+                    flavor=args.get("flavor"),
+                    account=args.get("account"),
+                )
+        except BridgeError as exc:
+            return error_result(exc.code, exc.message, exc.hint)
+        except SavedVarsReadError as exc:
+            return error_result(exc.code, exc.message, exc.hint)
+        except LuaVMUnavailableError as exc:
+            return error_result(
+                "lua-vm-unavailable",
+                str(exc),
+                "Install the plugin's one dependency, lupa>=2.1,<3, then run the call again.",
+            )
+        except OSError as exc:
+            return error_result(
+                "bridge-failed",
+                f"Bridge file could not be written: {exc}",
+                "Check that the addon folder and the plugin data directory are writable.",
+            )
+        except Exception as exc:
+            return error_result(
+                "internal-error",
+                f"{type(exc).__name__}: {exc}",
+                "This is a bug in wow-addon-forge; please report it with this message.",
+            )
+        return {"ok": True, **report}
+
+    def handle_bridge(self, args: object = None, **_kwargs: Any) -> str:
+        """Handle a ``wow_bridge`` tool call and return its result as JSON text."""
+        return to_json(self.bridge_result(args))
+
 
 def wow_tools_available() -> bool:
     """Report whether the wow tools can run at all.
@@ -1159,6 +1335,13 @@ def register_tools(ctx: Any, *, tools: ForgeTools | None = None) -> list[str]:
             active.handle_install,
             "Install an addon into Interface/AddOns after it passes wow_check.",
             "📥",
+        ),
+        (
+            "wow_bridge",
+            WOW_BRIDGE_SCHEMA,
+            active.handle_bridge,
+            "Pull an addon outbox or push records into Inbox.lua.",
+            "🌉",
         ),
     )
     registered: list[str] = []

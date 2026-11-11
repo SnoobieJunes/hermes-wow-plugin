@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — Bridge cursor, inbox_seen, and Discord lines  [decision]
+- Task: T-012 (`docs/SPEC-PLUGIN.md` §7)
+- What: Three contracts pinned. (1) The pull cursor is `{"cursor": N}` in `$HERMES_HOME/cache/wow-addon-forge/bridge-cursors/<addon>.json`, not in the game folder. Pull returns outbox records with `id` strictly greater than that cursor, then stores the max id returned. (2) `push` keeps existing `Inbox.lua` items unless their id is listed in SavedVariables `inbox_seen`. A missing `inbox_seen` keeps every existing item, and the result says so. (3) `bridge pull --format discord` prints `[kind] text` one line per record and prints nothing when there are none. An omitted addon name uses the single installed addon whose TOC declares `## X-Forge-Bridge: 1`.
+- Why: SPEC-PLUGIN §7 names the cursor, the inbox shape and the Discord cron command without saying where the cursor is stored, which inbox items are unconsumed, or what a Discord line looks like. Putting the cursor in the game folder would be a write the disclosure does not list.
+- Where: `src/wow_addon_forge/bridge.py`, `src/wow_addon_forge/__main__.py`.
+- Plan: SPEC-PLUGIN §7 left those three choices unspecified → pinned here. TASKS.md T-012 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — wow_install reload versus restart, and absolute source paths  [decision]
 - Task: T-010 (`docs/SPEC-PLUGIN.md` §3)
 - What: Two contracts pinned. (1) `wow_install` reports `restart` when the destination folder is new, when either TOC is missing, or when the incoming TOC lists a file the installed TOC did not; otherwise `reload`. (2) An absolute source path is allowed. What is refused is a `..` segment and an addon basename that is not `^[A-Za-z0-9_!-]+$` (a colon counts as an absolute name). The destination is always `<AddOns>/<basename>`. `force` overrides a `fail` verdict only; a check that could not run still blocks the write. Backups go to `$HERMES_HOME/cache/wow-addon-forge/backups`.

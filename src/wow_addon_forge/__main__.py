@@ -13,7 +13,7 @@ import json
 from collections.abc import Sequence
 
 from wow_addon_forge import PLUGIN_ID, __version__
-from wow_addon_forge.tools import WOW_API_ACTIONS, WOW_API_SOURCES, ForgeTools
+from wow_addon_forge.tools import WOW_API_ACTIONS, WOW_API_SOURCES, WOW_BRIDGE_ACTIONS, ForgeTools
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -24,8 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
         exactly once per caller.
 
     Returns:
-        A parser with ``--version``, the ``env`` verb (optional ``--root PATH``) and the
-        ``api`` verb (an action, an optional name or query, ``--flavor`` and ``--source``).
+        A parser with ``--version``, the ``env`` verb, the ``api`` verb and the ``bridge`` verb.
         The verb is not required: no verb prints usage.
 
     Failure modes:
@@ -71,6 +70,18 @@ def build_parser() -> argparse.ArgumentParser:
         choices=WOW_API_SOURCES,
         default=None,
         help="sync only: where the documentation comes from (default: auto)",
+    )
+    # [2026-11-11 T-012] The bridge verb is the cron twin of wow_bridge. pull with
+    # --format discord prints lines, not JSON, so a no_agent cron job can deliver them.
+    bridge_parser = subparsers.add_parser("bridge", help="pull an outbox or show bridge status")
+    bridge_parser.add_argument("action", choices=WOW_BRIDGE_ACTIONS)
+    bridge_parser.add_argument("--addon", default=None, help="addon folder name")
+    bridge_parser.add_argument("--flavor", default=None, help="game flavor (default: forever)")
+    bridge_parser.add_argument(
+        "--format",
+        choices=("json", "discord"),
+        default=None,
+        help="pull: discord prints one line per record and nothing when there is none",
     )
     return parser
 
@@ -119,6 +130,24 @@ def main(argv: Sequence[str] | None = None, *, tools: ForgeTools | None = None) 
         if args.term is not None:
             call["name" if args.action == "lookup" else "query"] = args.term
         result = (tools if tools is not None else ForgeTools()).api_result(call)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0 if result["ok"] else 1
+    if args.verb == "bridge":
+        # [2026-11-11 T-012] Discord format is a print choice, not a second result. The
+        # tool still returns JSON; an empty pull prints nothing, which is the cron contract.
+        call = {"action": args.action}
+        if args.addon is not None:
+            call["addon"] = args.addon
+        if args.flavor is not None:
+            call["flavor"] = args.flavor
+        if args.format is not None:
+            call["format"] = args.format
+        result = (tools if tools is not None else ForgeTools()).bridge_result(call)
+        if args.format == "discord" and result.get("ok") and args.action == "pull":
+            lines = result.get("lines") or []
+            if lines:
+                print("\n".join(str(line) for line in lines))
+            return 0
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0 if result["ok"] else 1
     parser.print_help()
