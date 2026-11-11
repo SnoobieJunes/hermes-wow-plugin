@@ -1,0 +1,4 @@
+{
+  "name": "wow-addon-forge",
+  "api": "plugin_api.py"
+}

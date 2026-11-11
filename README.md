@@ -81,7 +81,7 @@ uv sync --all-groups
 hermes plugins validate . --install-deps
 ```
 
-A linked checkout is enabled with `hermes plugins enable wow-addon-forge`. Catalog install (`hermes plugins install wow-addon-forge`) waits until the plugin is published.
+A linked checkout is enabled with `hermes plugins enable wow-addon-forge`. Catalog install (`hermes plugins install wow-addon-forge`) waits until the plugin is published. Hermes Desktop shows an Addon Forge pane (`desktop/plugin.js`) whose buttons call `dashboard/plugin_api.py`: status, addons, check, install, and bridge pull.
 
 `env` is the command-line twin of the `wow_env` tool. It only reads. It looks in
 `/Applications/World of Warcraft` and `C:\Program Files (x86)\World of Warcraft`,

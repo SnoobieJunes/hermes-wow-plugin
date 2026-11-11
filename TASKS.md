@@ -27,10 +27,6 @@
       Why: The Discord mirror is the demo's closing beat (SPEC-GUILDHALL §10).
       Accept: Built through the plugin's tools (LOOP.md rule 10). A board post authored in a simulated client appears in `wow_bridge pull` output after `client.reload()` as Discord-ready text; a `post` command sent with `wow_bridge push` becomes a `board.post` after the next reload when the loading character is an officer, and is reported refused in the outbox when it is not; an inbox item is never applied twice. `wow_check` verdict `pass`. Full gate green.
       Touches: `addons/Guildhall/Modules/Mirror.lua`, `addons/Guildhall/Guildhall.toc`, `addons/Guildhall/Tests/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-043   Gated: none
-- [ ] T-024 — Desktop pane `Addon Forge` and its backend
-      Why: Non-technical users get buttons instead of tool names; judges score polish (SPEC-PLUGIN §10).
-      Accept: `desktop/plugin.js` and `dashboard/plugin_api.py` exist; the validator's `desktop surface` check passes; backend route tests against a fake install return status, the addon list and a check result; the pane imports nothing but `@hermes/plugin-sdk`, `react` and `react/jsx-runtime` and contains no JSX. Full gate green.
-      Touches: `desktop/plugin.js`, `dashboard/`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-014   Gated: none
 - [ ] T-035 — Run the in-game probe
       Why: Only the live client says which events fire and whether guild addon messages echo (INGAME-CHECKLIST section A).
       Accept: The owner installs ForgeProbe, logs in on a guilded character, runs `/forge probe`, reloads; `wow_errors` output is pasted into the task; INGAME-CHECKLIST lines 1–5 carry results; any detection the probe shows unusable gets a task.
@@ -107,6 +103,10 @@
 ## Dropped
 
 ## Done
+- [x] T-024 — Desktop pane `Addon Forge` and its backend (2026-11-11, this commit)
+      Why: Non-technical users get buttons instead of tool names; judges score polish (SPEC-PLUGIN §10).
+      Accept: `desktop/plugin.js` and `dashboard/plugin_api.py` exist; the validator's `desktop surface` check passes; backend route tests against a fake install return status, the addon list and a check result; the pane imports nothing but `@hermes/plugin-sdk`, `react` and `react/jsx-runtime` and contains no JSX. Full gate green.
+      Touches: `desktop/plugin.js`, `dashboard/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-014   Gated: none
 - [x] T-014 — Catalog-ready baseline (2026-11-11, this commit)
       Why: From this commit on, any commit can be pinned for the hackathon entry (PLAN §5).
       Accept: `hermes plugins validate . --install-deps` passes with 0 failures; `LICENSE` (MIT), `SECURITY.md` and a README disclosure section covering SPEC-PLUGIN §13 exist; `.github/workflows/ci.yml` runs the full gate on macOS and Linux; `plugin.yaml` `provides_tools` lists exactly the registered tools; version `0.1.0` agrees in `plugin.yaml`, `pyproject.toml` and the package; a cold clone passes the gate.

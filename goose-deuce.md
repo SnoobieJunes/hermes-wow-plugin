@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — errors route for the pane section  [decision]
+
+- **Plan / spec said:** SPEC-PLUGIN §10 names the In-game errors section and lists buttons for status, addons, check, install, and bridge pull. It does not name an errors route.
+- **Actually did:** Added `GET /errors`, which calls `wow_errors`, so that section has a button. The other five routes match the spec.
+- **Why:** A section with no call would be a dead control. The route is read-only.
+- **Commit(s):** this commit
+- **Consequence:** The pane's Read errors button calls `/errors`.
+
 ## 2026-11-11 — T-041 parked on a stale gateway tool list  [process]
 
 - **Plan / spec said:** T-041 runs a fresh Hermes session that calls every plugin tool.
