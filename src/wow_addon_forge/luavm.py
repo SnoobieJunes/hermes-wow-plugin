@@ -170,3 +170,126 @@ def run_chunk(runtime: Any, source: str, chunk_name: str, *args: Any) -> None:
     phase, message = runner(source, "@" + chunk_name, *args)
     if phase is not None:
         raise LuaChunkError(str(phase), str(message))
+
+
+# [2026-11-11 T-005] This helper always returns exactly three values (phase, message, result)
+# with explicit nils, so Python can unpack a fixed tuple whether the chunk failed or returned
+# nothing; a Lua function that sometimes returns two values would make a nil first result
+# indistinguishable from a short return list at the lupa boundary.
+_RUN_CHUNK_VALUE = """
+return function(source, chunk_name)
+    local compiled, message = loadstring(source, chunk_name)
+    if not compiled then return "compile", tostring(message), nil end
+    local ok, result = pcall(compiled)
+    if not ok then return "runtime", tostring(result), nil end
+    return nil, nil, result
+end
+"""
+
+
+def run_chunk_value(runtime: Any, source: str, chunk_name: str) -> Any:
+    """Run ``source`` with no arguments and return its first return value.
+
+    Why this exists:
+        Host-side data files (the API documentation resources) communicate by RETURNING a
+        table, unlike addon files, which the client calls with ``...`` and whose returns it
+        ignores. This is the mirror of ``run_chunk`` for those files: same loadstring/pcall
+        classification, but the value crosses back.
+
+    Args:
+        runtime: A runtime from ``new_runtime``.
+        source: The Lua source text.
+        chunk_name: The file name to show in messages (for example ``Events.lua``).
+
+    Returns:
+        The chunk's first return value as lupa presents it, or ``None`` when the chunk
+        returns nothing. Tables stay Lua tables; callers convert with ``lua_to_python``.
+
+    Failure modes:
+        Raises ``LuaChunkError`` with phase ``"compile"`` when the source does not compile,
+        and with phase ``"runtime"`` when the chunk raises.
+    """
+    runner = runtime.execute(_RUN_CHUNK_VALUE)
+    # [2026-11-11 T-005] A leading "@" makes Lua print chunk_name as a file in its messages,
+    # exactly as in run_chunk; the helper's three explicit returns unpack as a 3-tuple.
+    phase, message, result = runner(source, "@" + chunk_name)
+    if phase is not None:
+        raise LuaChunkError(str(phase), str(message))
+    return result
+
+
+def lua_to_python(value: Any) -> Any:
+    """Convert a Lua value to plain JSON-shaped Python data.
+
+    Why this exists:
+        Documentation and resource files hand back Lua tables whose shape Python callers
+        cannot serialise or compare. One recursive conversion owns the shape rules so every
+        caller sees the same plain data.
+
+    Args:
+        value: A value that crossed the lupa boundary (or a plain Python scalar).
+
+    Returns:
+        A Lua table whose keys are exactly ``1..n`` (``n >= 1``) becomes a list in index
+        order; an empty table becomes ``[]``; any other table becomes a dict with string keys
+        (non-string keys via ``str()``). ``bool`` and ``str`` pass through, a float with an
+        integral value becomes an ``int``, other numbers are unchanged, ``None`` stays
+        ``None``, and Lua functions, userdata and threads become ``None``.
+
+    Failure modes:
+        Raises ``ValueError`` when nesting goes past 40 levels, which a cyclic table always
+        does; real documentation data nests only a handful of levels.
+    """
+    return _lua_to_python(value, 0)
+
+
+def _lua_to_python(value: Any, depth: int) -> Any:
+    # [2026-11-11 T-005] The depth limit is the cycle guard: Lua tables can reference
+    # themselves (Enum tables do not, but a hostile or corrupt file can), and an unguarded
+    # recursion would hang instead of failing with a reportable error.
+    if depth > 40:
+        raise ValueError(
+            "Lua value nested deeper than 40 levels; refusing to convert (cyclic table?)"
+        )
+    if value is None or isinstance(value, (bool, str)):
+        return value
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        # [2026-11-11 T-005] Lua 5.1 has one number type; an integral float is an integer in
+        # every sense the data means (enum values, counts), so it serialises as one.
+        return int(value) if value.is_integer() else value
+    from lupa import lua51
+
+    if lua51.lua_type(value) != "table":
+        return None
+    pairs: list[tuple[Any, Any]] = [(key, item) for key, item in value.items()]
+    if not pairs:
+        return []
+    indexed: dict[int, Any] = {}
+    is_array = True
+    for key, item in pairs:
+        if isinstance(key, bool):
+            is_array = False
+            break
+        if isinstance(key, int):
+            indexed[key] = item
+        elif isinstance(key, float) and key.is_integer():
+            indexed[int(key)] = item
+        else:
+            is_array = False
+            break
+    if is_array and sorted(indexed) == list(range(1, len(pairs) + 1)):
+        return [_lua_to_python(indexed[index], depth + 1) for index in range(1, len(pairs) + 1)]
+    converted: dict[str, Any] = {}
+    for key, item in pairs:
+        if isinstance(key, str):
+            dict_key = key
+        elif isinstance(key, float) and key.is_integer():
+            dict_key = str(int(key))
+        elif isinstance(key, (bool, int, float)) or key is None:
+            dict_key = str(key)
+        else:
+            dict_key = str(_lua_to_python(key, depth + 1))
+        converted[dict_key] = _lua_to_python(item, depth + 1)
+    return converted

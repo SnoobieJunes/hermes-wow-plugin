@@ -14,8 +14,9 @@ Two things in one repository:
 
 For WoW players and guild officers who are not programmers.
 
-Status (2026-11-11, T-003): walking skeleton. Hermes loads the plugin and one tool
-works: `wow_env`, which reports the WoW installs on this machine. Guildhall is one
+Status (2026-11-11, T-005): Hermes loads the plugin and two tools work: `wow_env`,
+which reports the WoW installs on this machine, and `wow_api`, which syncs and queries
+the client API index from the public `forever` documentation mirrors. Guildhall is one
 file that the test suite runs in a Lua 5.1 VM; it has not been loaded in the live
 game client. Everything else below is planned, and nothing is claimed to work
 until its task is closed in `TASKS.md`.
@@ -44,10 +45,13 @@ executes the checks instead of describing them.
 For development (needs [uv](https://docs.astral.sh/uv/); Hermes Agent for the last line):
 
 ```bash
-uv sync --all-groups                         # install
-uv run python -m wow_addon_forge --version   # prints: wow-addon-forge 0.1.0
-uv run python -m wow_addon_forge env         # JSON: installs, flavors, Interface number, addons
-uv run pytest -x -q                          # fast tests
+uv sync --all-groups                                               # install
+uv run python -m wow_addon_forge --version                        # prints: wow-addon-forge 0.1.0
+uv run python -m wow_addon_forge env                              # JSON: installs, flavors, Interface number, addons
+uv run python -m wow_addon_forge api sync --flavor forever        # download forever API mirrors and cache the index
+uv run python -m wow_addon_forge api status                       # JSON: cached build, age, entry counts
+uv run python -m wow_addon_forge api lookup C_Item.GetItemInfo    # JSON: signature, restriction/secret flags
+uv run pytest -x -q                                               # fast tests
 uv run pytest --cov=src/wow_addon_forge --cov-fail-under=85 && uv run ruff check . \
   && uv run ruff format --check . && uv run mypy src && hermes plugins validate .   # the full gate
 ```
@@ -62,12 +66,22 @@ found it prints a `no-install` error as JSON and exits with status 1. The Interf
 number it reports is derived from the client version (1.60.1 gives 16001) and the
 output says so in `interface_source`.
 
+`api` is the command-line twin of the `wow_api` tool (`sync`, `status`, `lookup <name>`,
+`search <query>`, `events [query]`). `api sync` fetches the `forever` branches of
+`Gethe/wow-ui-source` and `Ketho/BlizzardInterfaceResources` over HTTPS from
+`raw.githubusercontent.com`, executes the Lua tables in the sandboxed Lua 5.1 VM, and
+writes the index atomically under `$HERMES_HOME/cache/wow-addon-forge/api-index` (or
+`~/.hermes/cache/wow-addon-forge/api-index`). Reading a local `BlizzardInterfaceCode`
+export (`--source export`) is deferred to T-044 and returns an explicit
+`export-not-supported` error.
+
 ## What the plugin touches on your machine
 
 Planned, per `docs/SPEC-PLUGIN.md` §13; becomes a tested statement in T-014.
-Today the only tool is `wow_env`, and it only reads: `.build.info`, each flavor
-folder's `.flavor.info`, the TOC files under `Interface/AddOns`, and the folder
-names under `WTF/Account`, which it counts and never reports.
+Today the shipping tools are `wow_env` (reads `.build.info`, `.flavor.info`, addon TOC
+files under `Interface/AddOns`, and counts folders under `WTF/Account` without reporting
+account names) and `wow_api` (fetches the public GitHub documentation mirrors on `sync`
+and writes only the API index cache under `~/.hermes/cache/wow-addon-forge/api-index`).
 
 - Network: downloads of the public API documentation mirrors, only when you run
   an API sync.

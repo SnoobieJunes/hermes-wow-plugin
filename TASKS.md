@@ -3,11 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-005 — Build the API index and the `wow_api` tool
-      Why: Every other check needs one queryable truth for what exists in the user's client build (SPEC-PLUGIN §5).
-      Accept: Unit tests over a small hand-written fixture in Blizzard's documentation-table format (no Blizzard source committed) prove functions, events and enums are indexed with `restricted`, `secret` and `deprecated` fields, and that `lookup` of a missing name returns `unknown` with nearest matches. One live run, its output recorded in the commit body: `uv run python -m wow_addon_forge api sync --flavor forever` then `api status` prints build `1.60.1` with more than 4000 functions and more than 1200 events; `api lookup C_ChatInfo.SendAddonMessage` shows four arguments; `api lookup GetItemInfo` reports it is not a C API function and names `C_Item.GetItemInfo`; `api lookup COMBAT_LOG_EVENT_UNFILTERED` prints the restriction flags read from the documentation. `wow_api` is registered and `hermes plugins validate .` passes. Full gate green.
-      Touches: `src/wow_addon_forge/apidocs.py`, `src/wow_addon_forge/luavm.py`, `src/wow_addon_forge/tools.py`, `src/wow_addon_forge/__main__.py`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-003   Gated: none
-      Parked 2026-11-11 01:08 by the owner's hold, about 20 minutes in. The work is in two git stashes: `T-005-in-flight-0108-owner-hold` (apidocs.py, tools.py, luavm.py, __main__.py, plugin.yaml and board changes) and `T-005-in-flight-late-test-files-0111` (two test files Muse wrote after the hold). Inspect with `git stash list` and `git stash show -p <ref>`; reuse what is sound, restore product paths only, never the stashed TASKS.md.
 - [ ] T-006 — Lua 5.1 static analysis and TOC lint
       Why: Syntax and name errors must be caught before anything runs (SPEC-PLUGIN §4 stages 1–3).
       Accept: Tests prove: a file using `goto` or `//` fails with code `syntax` and its line; global reads and writes of a fixture are listed with lines; `C_Item.GetItemInfo(x)` is reported as member access `C_Item.GetItemInfo`; `local CI = C_Item` is reported as a read of `C_Item`; TOC parsing returns the Interface list, the SavedVariables names and the file list, and flags a listed file that does not exist. Full gate green.
@@ -158,6 +153,10 @@
       Why: Code that works out of combat and errors in combat is the failure the static rule cannot fully see (SPEC-PLUGIN §6).
       Accept: With a restriction regime active, documented secret-returning functions return an opaque value; arithmetic, comparison or concatenation on it raises a `secret-value` finding with file and line; passing it to a widget setter does not; Guildhall and ForgeProbe stay at verdict `pass`. Full gate green.
       Touches: `src/wow_addon_forge/headless/`, `src/wow_addon_forge/check.py`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-008   Gated: none
+- [ ] T-044 — Support local `BlizzardInterfaceCode` client exports in `wow_api sync`
+      Why: SPEC-PLUGIN §5 lists `<flavor>/BlizzardInterfaceCode` (produced by `ExportInterfaceFiles code`) ahead of the public mirrors when present on disk; deferred from T-005 until an export folder layout is verified.
+      Accept: Unit tests against a fake install holding `<flavor>/BlizzardInterfaceCode` prove `wow_api` with `source="export"` and `source="auto"` indexes the local export with zero network calls, and falls back to the mirror under `auto` (saying so in `note`) when no export folder is present. Full gate green.
+      Touches: `src/wow_addon_forge/apidocs.py`, `src/wow_addon_forge/tools.py`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-005, T-039   Gated: none
 - [ ] T-004 — Run standing goose-deuce sweep #1
       Why: Keep `docs/PLAN.md`, `TASKS.md`, `AGENTS.md` and `goose-deuce.md` aligned. The cadence is suspended until the hackathon deadline (goose-deuce.md 2026-11-11 "Sweep cadence suspended until the hackathon deadline"); the owner releases this task after 2026-11-11 14:00 PST.
       Accept: Every pending `Plan:` adjustment is folded into `docs/PLAN.md`; no orphaned `[deferred]` or `[tech-debt]` entry; the stranger test passes.
@@ -168,6 +167,10 @@
 ## Dropped
 
 ## Done
+- [x] T-005 — Build the API index and the `wow_api` tool (2026-11-11, this commit)
+      Why: Every other check needs one queryable truth for what exists in the user's client build (SPEC-PLUGIN §5).
+      Accept: Unit tests over a small hand-written fixture in Blizzard's documentation-table format (no Blizzard source committed) prove functions, events and enums are indexed with `restricted`, `secret` and `deprecated` fields, and that `lookup` of a missing name returns `unknown` with nearest matches. One live run, its output recorded in the commit body: `uv run python -m wow_addon_forge api sync --flavor forever` then `api status` prints build `1.60.1` with more than 4000 functions and more than 1200 events; `api lookup C_ChatInfo.SendAddonMessage` shows four arguments; `api lookup GetItemInfo` reports it is not a C API function and names `C_Item.GetItemInfo`; `api lookup COMBAT_LOG_EVENT_UNFILTERED` prints the restriction flags read from the documentation. `wow_api` is registered and `hermes plugins validate .` passes. Full gate green.
+      Touches: `src/wow_addon_forge/apidocs.py`, `src/wow_addon_forge/luavm.py`, `src/wow_addon_forge/tools.py`, `src/wow_addon_forge/__main__.py`, `src/wow_addon_forge/__init__.py`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-003   Gated: none
 - [x] T-040 — Re-phase the plan: the plugin first, then the addon built through it (2026-11-11, this commit)
       Why: Owner decision after reviewing the board: the plugin is finished and gated before any addon work, and the addon is built only with the plugin's tools so it proves the plugin.
       Accept: `docs/PLAN.md` §5 states the phases, the gate and the rules; the building blocks move into the plugin (T-015..T-019 re-scoped, T-011 after them); T-041 (gate), T-042 (scaffold) and T-043 (Board) exist; LOOP.md rules 10–11 and HERMES-OVERLAY.md addition 6 match; the step-2 field-count gate passes; the full gate is green.

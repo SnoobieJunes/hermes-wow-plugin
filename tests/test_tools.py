@@ -161,13 +161,13 @@ def test_wow_env_never_leaks_account_names(forever_fs: Any) -> None:
     assert "ACCOUNT1" not in raw
 
 
-def test_register_tools_registers_exactly_wow_env(forever_fs: Any) -> None:
+def test_register_tools_matches_provides_tools_and_registers_wow_env(forever_fs: Any) -> None:
     ctx = RecordingContext()
     registered = register_tools(ctx, tools=ForgeTools(fs=forever_fs))
-    assert registered == ["wow_env"]
+    assert "wow_env" in registered
     assert registered == list(PROVIDES_TOOLS)
-    assert len(ctx.tools) == 1
-    tool = ctx.tools[0]
+    assert len(ctx.tools) == len(PROVIDES_TOOLS)
+    tool = next(item for item in ctx.tools if item["name"] == "wow_env")
     assert tool["name"] == "wow_env"
     assert tool["toolset"] == "wow"
     assert tool["schema"] is WOW_ENV_SCHEMA
