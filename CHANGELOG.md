@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-053 — The Guildhall window now has a working tab rail: opening `/gh` shows Board/Calendar/Marks buttons with the first tab already open, and tabs switch in their own containers instead of stacking (the live window previously opened empty with no way to reach any tab)
 2026-11-11 — T-052 — ForgeProbe no longer auto-probes at login (its protected event registrations popped a Blizzard-UI modal on every login in the live client) and records registration truthfully via IsEventRegistered; run it with `/forge probe`
 2026-11-11 — T-051 — Public-repo hygiene mirrored from the owner's Eldr repository: Code of Conduct, CONTRIBUTING, PR and issue templates, FUNDING, and a gitleaks secret scan in CI over full history (baseline: zero findings) (no user-visible change)
 2026-11-11 — T-023 — Guildhall Discord mirror: board posts and calendar events appear as Discord-ready lines in `wow_bridge pull` after a `/reload`, and a `post` command pushed from Discord becomes a board post tagged with its origin when the character who loads it is an officer — a member's client refuses it and the refusal shows up in the next pull; no inbox command ever applies twice

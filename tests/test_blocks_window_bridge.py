@@ -91,7 +91,11 @@ def test_window_is_lazy_and_classic_uses_known_templates(tmp_path: Path) -> None
     assert client.run_lua("return Sample.Window.note_built") is None
     client.run_lua('SlashCmdList["SAMPLE"]("")')
     assert client.run_lua("return Sample.Window.built") is True
-    assert client.run_lua("return Sample.Window.note_built") is None
+    # [2026-11-11 T-053] Opening shows the first tab (live T-036 evidence:
+    # an opened-but-empty window reads as broken), so the first tab builds
+    # at open — it IS first shown then. Laziness for later tabs is locked
+    # by test_window_tab_rail_buttons_switch_containers.
+    assert client.run_lua("return Sample.Window.note_built") is True
     assert client.run_lua("return Sample.Window.escape_listed()") is True
     assert client.run_lua("return Sample.Window.show_tab('notes')") is True
     assert client.run_lua("return Sample.Window.note_built") is True
@@ -104,6 +108,33 @@ def test_window_is_lazy_and_classic_uses_known_templates(tmp_path: Path) -> None
         "return t.frame .. ',' .. t.button .. ',' .. t.close .. ',' .. t.scroll"
     )
     assert set(str(theme_templates).split(",")) <= known
+    shutil.rmtree(addon)
+
+
+def test_window_tab_rail_buttons_switch_containers(tmp_path: Path) -> None:
+    # [2026-11-11 T-053] Regression for the live T-036 screenshot: the window
+    # opened with no buttons and no tab shown. The rail must build on open,
+    # show the first tab, and switch containers on click.
+    addon = _instantiate(tmp_path / "WoW")
+    world = World(index=minimal_api_index(), rng_seed=53053)
+    client = world.client("Vera", rank=2)
+    client.load_addon(addon)
+    assert client.run_lua("return Sample.Window.register_tab('alpha', function() end)") is True
+    assert client.run_lua("return Sample.Window.register_tab('beta', function() end)") is True
+    client.run_lua('SlashCmdList["SAMPLE"]("")')
+    assert client.run_lua("return Sample.Window.tabs[1].button ~= nil") is True
+    assert client.run_lua("return Sample.Window.tabs[2].button ~= nil") is True
+    assert client.run_lua("return Sample.Window.tab_shown") == "alpha"
+    assert client.run_lua("return Sample.Window.tabs[1].container:IsShown()") is True
+    # Click beta through its real OnClick script.
+    client.run_lua("local b = Sample.Window.tabs[2].button; b:GetScript('OnClick')(b)")
+    assert client.run_lua("return Sample.Window.tab_shown") == "beta"
+    assert client.run_lua("return Sample.Window.tabs[2].container:IsShown()") is True
+    assert client.run_lua("return Sample.Window.tabs[1].container:IsShown()") is False
+    # A tab registered after the window is built still gets its button.
+    assert client.run_lua("return Sample.Window.register_tab('gamma', function() end)") is True
+    assert client.run_lua("return Sample.Window.tabs[3].button ~= nil") is True
+    assert client.errors == []
     shutil.rmtree(addon)
 
 
