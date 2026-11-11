@@ -193,12 +193,15 @@ Any addon can opt in; Guildhall is the first.
   result enum. It captures Lua errors and `ADDON_ACTION_FORBIDDEN` /
   `ADDON_ACTION_BLOCKED` into a 200-entry ring (message, stack, addon, count,
   time). It passes `wow_check` like any other addon.
-- **Building blocks** (`wow_new` modules): `core` (namespace, event dispatcher,
-  slash), `store` (versioned SavedVariables with migrations), `codec` (safe
-  serialiser, no `loadstring` on received data), `sync` (chunking, throttle,
-  guild-channel replication), `window` (one lazy window, theme tokens),
-  `bridge` (the §7 contract). Each block is the same code Guildhall runs, with
-  its own Lua tests.
+- **Building blocks** (`wow_new` modules, in `src/wow_addon_forge/blocks/`): `core`
+  (namespace, event dispatcher, clock, slash, the safe codec with no `loadstring` on
+  received data, versioned SavedVariables with migrations), `log` (the replicated
+  record log and reducers), `sync` (chunking, throttle, restriction queue,
+  guild-channel replication), `trust` (roles and record acceptance), `window` (one
+  lazy window, theme tokens, the Classic theme), `bridge` (the §7 contract). The
+  blocks are written and tested in the plugin before any addon exists. Each is a Lua
+  template with an addon-name token and its own Lua tests. Guildhall is scaffolded
+  from them and is their first real consumer.
 
 ## 9. Skill `wow-addon-builder`
 

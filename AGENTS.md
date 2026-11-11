@@ -43,7 +43,8 @@ green commit, record where the work lives on the task, and stop cleanly.
   |---|---|
   | `plugin.yaml`, `__init__.py` | Hermes plugin manifest and root entrypoint (`register(ctx)`) |
   | `src/wow_addon_forge/` | the plugin: install detection, API index, Lua 5.1 checks, headless WoW runtime, install / errors / saved variables, Discord bridge, tool and CLI handlers |
-  | `addons/Guildhall/` | the guild addon (Lua 5.1 + TOC, Interface 16001) |
+  | `src/wow_addon_forge/blocks/` | the building blocks: tested Lua templates `wow_new` scaffolds addons from |
+  | `addons/Guildhall/` | the guild addon, created and changed only through the plugin's tools after T-041 (Lua 5.1 + TOC, Interface 16001) |
   | `addons/ForgeProbe/` | companion addon the plugin installs: in-game capability probe and Lua error catcher |
   | `skills/` | bundled Hermes skill (`skills/wow-addon-builder/SKILL.md`) |
   | `desktop/`, `dashboard/` | Hermes Desktop pane (`desktop/plugin.js`) and its REST backend |
@@ -96,6 +97,12 @@ green commit, record where the work lives on the task, and stop cleanly.
     `react` and `react/jsx-runtime`; no committed `.pyc` or compiled binary (Rule 17).
   - The validator's security scan reports `.eval(` in plugin code as a caution a reviewer must
     read. In `src/` use `runtime.execute("return …")` or `runtime.globals()`; tests may use `.eval`.
+  - The plugin is linked into Hermes (`~/.hermes/plugins/wow-addon-forge` → this repo) and
+    enabled, so every new Hermes session and child loads the working tree. A session that
+    starts while the tree is broken gets no `wow_*` tools: run the gate before spawning one.
+  - Muse keeps writing after its caller dies. After a killed or timed-out session, wait and
+    re-check `git status` before stashing or committing (two test files landed three
+    minutes after a stash on 2026-11-11).
   - Global git config on this machine has `init.defaultbranch=22`; always `git init -b main`.
   - `muse_turn` only accepts a workspace inside the session cwd: start sessions with
     `--in` this repo.

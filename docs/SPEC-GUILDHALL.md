@@ -3,6 +3,11 @@
 Dated 2026-11-11. Normative. Governed by `docs/PLAN.md`.
 Working title `Guildhall`; slash commands `/guildhall` and `/gh`.
 
+Guildhall is built only through the `wow-addon-forge` plugin's tools, and only
+after the plugin-done gate (PLAN §5). `Core/`, `UI/Theme.lua` and `UI/Window.lua`
+are not written here by hand: `wow_new` instantiates them from the plugin's
+building blocks. Sections 4–6 describe the behaviour those blocks must have.
+
 ## 1. What it is
 
 One addon that gives a guild its own space inside the game: a board, events with
@@ -274,8 +279,8 @@ them reachable; otherwise proposals are described and colour-swatched.
 One movable window (about 900×560), closed with Escape, opened by `/gh` and the
 addon compartment button. A left tab rail; each tab's frames are built the first
 time it is shown. Lists use the client's scroll box. All colours, fonts and
-textures come from `UI/Theme.lua`; a theme is one table. Default theme:
-Classic, built on the stock frame templates, until the owner picks otherwise.
+textures come from `UI/Theme.lua`; a theme is one table. The theme is
+Classic, built on the stock frame templates (the owner's choice, 2026-11-11).
 A status line shows guildmates in sync, queued sends, and bridge state.
 
 ## 10. Bridge

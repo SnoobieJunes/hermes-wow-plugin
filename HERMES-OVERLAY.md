@@ -48,9 +48,14 @@ is Hermes Agent. Its six additions:
    files on disk are the success criterion, inspect the workspace before any retry, and
    fall back to drafting in the driver only on reported exhaustion or two verified-empty
    stalls. The driver session (the builder) reviews, runs the gate and commits; a Muse
-   self-report is never proof. `delegate_task` children inherit the driver's model and
-   are for adversarial review and mechanical sweeps. The review lane (LOOP.md rule 8)
-   runs on a different model family than the builder on purpose.
+   self-report is never proof. `delegate_task` runs in Advanced Delegation's
+   model-routes mode when the owner has switched it on: the tool then offers an `option`
+   per task. Pick `claude` to implement, `grok` for adversarial review and second
+   opinions (a different model family than the implementer, on purpose), and `free-best`
+   for mechanical sweeps. A task that names no option runs on the configured default.
+   When the tool offers no `option`, children inherit the driver's model. Muse Wonder
+   Full is not a route: it is reached only through `muse_turn`. Every child result is
+   reviewed and re-tested before it touches the tree.
 
 **Approval posture.** Hermes `write_approval` and the security settings are the
 runtime enforcement behind AGENTS.md → Version control and → Blockers. Destructive

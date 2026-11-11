@@ -91,27 +91,51 @@ Seams (injected, so tests stay hermetic): filesystem root, HTTP fetcher, clock,
 randomness, and the Lua VM factory. Nothing in the suite touches the real WoW
 install, the network or `~/.hermes`.
 
+Reusable addon code lives in the plugin as building blocks
+(`src/wow_addon_forge/blocks/`). Guildhall is scaffolded from them by `wow_new`;
+it is the blocks' first consumer, not their source.
+
 The plugin talks to the game only through files the game itself reads and
 writes. It never automates input and never reads game memory.
 
 ## 5. Phases
 
+Two products, strictly in order. The owner's rule (2026-11-11): the plugin is
+built first, inside Hermes; the addon is then built only through the plugin's
+tools; the addon is the test that the plugin is real.
+
 | Phase | Tasks | Outcome |
 |---|---|---|
-| 0 Setup | T-000..T-003 | Process files, plan, toolchain, walking skeleton |
-| 1 Forge core | T-005..T-012 | API index, Lua analysis, headless runtime, the nine tools |
-| 2 Shippable plugin | T-013, T-014 | Skill, `/wow`, `hermes wow`, catalog-ready baseline. **From here every commit is pinnable.** |
-| 3 Guildhall MVP | T-015..T-023 | Core, record log, sync, trust, UI shell, Board, Calendar, Marks, Tracker, bridge |
-| 4 Desktop | T-024 | The Addon Forge pane |
-| 5 Guildhall modules | T-025..T-034 | Orders, Roster, Chronicle, Quests and Bounties, Wishlist, Plans, Availability, PvP, Tabard, secret-value simulation |
-| 6 Owner | T-035..T-038 | In-game probe and acceptance, push, catalog PR, demo, form |
+| 0 Setup | T-000..T-003 | Process files, plan, toolchain, walking skeleton (done) |
+| 1 Plugin: tools | T-005..T-010, T-012 | API index, Lua analysis, headless runtime, check, test, probe, saved variables, install, bridge |
+| 2 Plugin: building blocks | T-015..T-019, T-011 | Tested Lua blocks (core, log, sync, trust, window, bridge) and `wow_new`, which scaffolds an addon from them |
+| 3 Plugin: shippable | T-013, T-039, T-014 | Skill, `/wow`, `hermes wow`, settings, catalog-ready baseline. **From here every commit is pinnable.** |
+| 4 The gate | T-041 | The plugin, enabled in Hermes, builds a throwaway addon end to end through its own tools, from a fresh session |
+| 5 Guildhall through the plugin | T-042, T-043, T-020..T-023 | Scaffolded by `wow_new`; Board; events and sign-ups; Marks with automatic tracking; Discord mirror |
+| 6 Polish and breadth | T-024, T-025..T-034 | Desktop pane, then the remaining Guildhall modules in spec order |
+| 7 Owner | T-035..T-038 | In-game probe and acceptance, push, catalog PR, demo, form |
 
-Order is priority. A loop that runs out of night leaves a shippable plugin and
-as much of Guildhall as it reached; nothing later is allowed to break phase 2.
+Rules that make the order real:
 
-Schedule for 2026-11-11 (PST): loops stop picking new product tasks at 09:30.
-09:30–11:30 owner in-game probe, acceptance and fixes. 11:30–12:30 demo capture.
-12:30–13:30 push, catalog PR, X post, form. 30 minutes of slack.
+- No file under `addons/Guildhall` is created or changed before T-041 closes.
+- After it, addon work uses the plugin's tools as called in the session:
+  `wow_new` creates, `wow_api` answers every API question, `wow_check` and
+  `wow_test` verify. Their verdicts are quoted in each commit.
+- A defect or a missing capability found while building the addon is a plugin
+  task, filed at the top of the queue and fixed before the addon task resumes.
+  Nothing is worked around by hand.
+- The demo shows exactly this: the plugin, and the addon it built.
+
+Order is priority. A loop that runs out of time leaves a finished, gated plugin
+and as much of Guildhall as it reached.
+
+Schedule for 2026-11-11 (PST). Pace is an estimate from one measured task
+(T-003, 23 minutes): the plugin phases close around 08:30 and the gate around
+09:00. Loops may keep working Guildhall tasks until 11:00. From 09:30 the owner
+runs the in-game probe and acceptance alongside. 11:30–12:30 demo capture.
+12:30–13:30 push, catalog PR, X post, form. 30 minutes of slack. At that pace
+the Board and events are likely built by 11:00; Marks, automatic tracking and
+the Discord mirror are at risk.
 
 ## 6. Non-goals
 

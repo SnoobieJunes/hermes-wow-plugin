@@ -29,7 +29,8 @@ What a loop adds on top:
    The task loop → PICK), and end. A stuck loop parks itself instead of
    spinning.
 7. **Untouchables** — the real WoW install and its `WTF/` SavedVariables (a loop never
-   installs into the live game; install steps are `Gated: owner`), `~/.hermes/config.yaml`,
+   installs into the live game; install steps are `Gated: owner`), `~/.hermes/config.yaml`
+   (the plugin is already linked and enabled; nothing else there changes),
    `~/.hermes/.env`, `/Users/auston/Development Projects/hermes-coreai`, the generated API
    index cache (regenerate it, never hand-edit it), and `docs/INGAME-CHECKLIST.md` result
    lines (only an in-game run fills them).
@@ -41,3 +42,16 @@ What a loop adds on top:
 9. **In-game truth** — nothing about the live client is claimed from a headless run. A task
    whose Accept needs the game is `Gated: owner`; its headless half ships and the in-game
    half becomes a line in `docs/INGAME-CHECKLIST.md`.
+10. **Plugin first, then the addon through the plugin** — no file under `addons/Guildhall`
+    is created or changed before T-041 (the plugin-done gate) is closed. After it, addon
+    work goes through the plugin's own tools, called in the session: `wow_new` creates,
+    `wow_api` answers every API question, `wow_check` and `wow_test` verify, and their
+    verdicts are quoted in the commit body. The addon is the plugin's acceptance test: a
+    defect or a missing capability found while building it is filed as a plugin task at
+    the top of `## Now` and fixed before the addon task resumes. Never work around the
+    plugin by hand.
+11. **Drafting ahead** — while the gate runs on the claimed task, children may draft the
+    next eligible tasks, but only into `.loop/drafts/T-###/` (git-ignored), never into the
+    working tree. A draft is untrusted input: it is reviewed and applied only after its
+    task is claimed, and it changes nothing about one claimed task and one commit at a
+    time.
