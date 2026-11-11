@@ -1,0 +1,63 @@
+name: Bug report
+description: Something is broken or confusing — a wrong wow_check verdict is as valuable as a crash
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Security vulnerabilities: do NOT file an issue.** Use GitHub → Security → "Report a vulnerability" (see [SECURITY.md](../blob/main/SECURITY.md)).
+        **Never attach SavedVariables files or name an account folder** — they can identify a player.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      options:
+        - A plugin tool (wow_env / wow_api / wow_check / wow_test / wow_new / wow_install / wow_savedvars / wow_errors / wow_bridge)
+        - Guildhall in the live game client
+        - Guildhall headless (wow_test / wow_check)
+        - ForgeProbe
+        - Hermes Desktop pane (Addon Forge)
+        - Docs
+    validations:
+      required: true
+  - type: dropdown
+    id: environment_kind
+    attributes:
+      label: Live client or headless?
+      description: These are different evidence — a headless pass says nothing about the live game.
+      options:
+        - Live WoW Forever client (1.60.1, Interface 16001)
+        - Headless (pytest / wow_test / wow_check)
+        - Both
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. …
+        2. …
+    validations:
+      required: false
+  - type: textarea
+    id: output
+    attributes:
+      label: Tool output / errors
+      description: Paste wow_check findings, wow_errors JSON, or the traceback. Redact character and account names if you prefer; do not paste raw SavedVariables.
+    validations:
+      required: false
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "macOS / Linux; Hermes version; plugin commit or catalog pin"
+    validations:
+      required: false

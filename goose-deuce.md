@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — Eldr hygiene mirrored minus its AGPL/CLA apparatus  [decision]
+- Task: T-051 (owner direction 2026-11-11; `docs/SPEC-PLUGIN.md` §13, T-014's MIT choice)
+- What: Copied/adapted from the owner's Eldr repo: Contributor Covenant code of conduct (verbatim, same enforcement contact), FUNDING.yml (verbatim), PR template, issue templates with a private-security contact link, and Eldr's hardened gitleaks CI job (pinned image, uid-matched container, commits-scanned assertion) with a zero-finding baseline over all 37 commits. Deliberately NOT mirrored: the AGPL-3.0 license, CLA.md, LICENSE-EXCEPTIONS.md, LICENSING.md, LICENSES/, DCO sign-off (Eldr's dual-licensing apparatus), TRADEMARKS.md and SPONSORS.md.
+- Why: This repo's license was settled as MIT in T-014 (LICENSE, plugin.yaml, pyproject.toml and README all agree, verified in this task); a CLA only earns its friction when relicensing is a business need, which a single-license MIT catalog plugin does not have. Eldr's trademark/sponsor files describe a product brand this repo does not operate. Everything else in Eldr's setup earned its place here.
+- Where: `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `.github/` (templates, FUNDING, CI secrets job), `.gitleaks.toml`, `README.md` (license footer links).
+- Plan: The owner asked for Eldr as the model "unless you see flaws" → the non-mirrored set above is that judgment, recorded here. TASKS.md T-051 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — Mirror widened Board with an origin tag; remaining §10 surface deferred  [deferred]
 - Task: T-023 (`docs/SPEC-GUILDHALL.md` §10)
 - What: Two calls beyond T-023's written Touches/Accept. (1) `Board.post(text, via)` gained an optional origin tag carried in the record payload and surfaced as `rows().via`, because §10 requires inbox-born records to be "tagged with their Discord origin" and no existing field could carry it; in-game posts pass nil and stay byte-identical. (2) Only the `post` inbox command and the board/event outbox kinds ship; the `event`/`grant`/`approve` commands and sign-up-summary/order/Marks-milestone outbox lines are refused as "unsupported" in the outbox rather than applied, because the Accept names only the board round trip and Orders (T-025) does not exist yet to summarize.

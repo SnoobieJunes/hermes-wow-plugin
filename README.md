@@ -125,7 +125,7 @@ This is the catalog disclosure from `docs/SPEC-PLUGIN.md` §13, as the shipping 
 
 ## License
 
-MIT. See [LICENSE](LICENSE). Report a vulnerability as [SECURITY.md](SECURITY.md) describes.
+MIT. See [LICENSE](LICENSE). Report a vulnerability as [SECURITY.md](SECURITY.md) describes. Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 World of Warcraft is a trademark of Blizzard Entertainment. This project is not
 affiliated with or endorsed by Blizzard.

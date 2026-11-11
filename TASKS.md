@@ -83,6 +83,10 @@
 ## Dropped
 
 ## Done
+- [x] T-051 — Repository hygiene mirrored from Eldr (2026-11-11, this commit)
+      Why: The repo publishes today (T-037); Eldr's public-repo setup is the owner's proven model, adapted where its AGPL/CLA apparatus does not fit an MIT plugin.
+      Accept: `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/` (bug, feature, config with security link) and `.github/FUNDING.yml` exist and name this repo's tools and rules; `.gitleaks.toml` exists, a local `gitleaks detect` over full history runs clean (findings allowlisted with reasons or none), and CI gains Eldr's hardened gitleaks job (pinned image, commits-scanned assertion); license statements agree across `LICENSE`, `plugin.yaml`, `pyproject.toml` and `README.md`. Full gate green.
+      Touches: `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `.github/`, `.gitleaks.toml`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-014   Gated: none
 - [x] T-023 — Guildhall Discord mirror, end to end (2026-11-11, this commit)
       Why: The Discord mirror is the demo's closing beat (SPEC-GUILDHALL §10).
       Accept: Built through the plugin's tools (LOOP.md rule 10). A board post authored in a simulated client appears in `wow_bridge pull` output after `client.reload()` as Discord-ready text; a `post` command sent with `wow_bridge push` becomes a `board.post` after the next reload when the loading character is an officer, and is reported refused in the outbox when it is not; an inbox item is never applied twice. `wow_check` verdict `pass`. Full gate green.

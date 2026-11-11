@@ -1,0 +1,31 @@
+name: Feature request
+description: Something the plugin or Guildhall should do — check TASKS.md first; it may already be queued
+labels: [enhancement]
+body:
+  - type: textarea
+    id: want
+    attributes:
+      label: What do you want to be able to do?
+      description: Describe the outcome as a player or officer would say it ("build me an addon that…", "see who signed up…").
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where would it live?
+      options:
+        - The plugin's tools (wow-addon-forge)
+        - Guildhall (the guild addon)
+        - A new building block for scaffolded addons
+        - Hermes Desktop pane
+        - Docs / skill
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: How would you know it works?
+      description: "Observable acceptance: what would you run, click, or see? Tasks in this repo are only pickable once they name something checkable — headless, or a step in docs/INGAME-CHECKLIST.md for live-client behaviour."
+    validations:
+      required: false

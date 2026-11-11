@@ -1,0 +1,11 @@
+# gitleaks configuration — secret-scanning gate for the public repo.
+# [2026-11-11 T-051] Mirrors the Eldr repository's setup. Baseline
+# established 2026-11-11 over all 37 commits: NO findings on the default
+# ruleset, so this file carries no allowlists — any future finding is real
+# until proven otherwise, and an allowlist entry added later must state its
+# reason here (the Eldr rule). Re-run with:
+#
+#   gitleaks detect --no-banner --redact -v -c .gitleaks.toml
+#
+[extend]
+useDefault = true

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/SnoobieJunes/hermes-wow-plugin/security/advisories/new
+    about: Never file vulnerabilities as public issues — see SECURITY.md. Do not attach SavedVariables files; they can identify a player.
+  - name: The work queue (TASKS.md)
+    url: https://github.com/SnoobieJunes/hermes-wow-plugin/blob/main/TASKS.md
+    about: Planned and in-progress work lives here — your request may already be a task.
