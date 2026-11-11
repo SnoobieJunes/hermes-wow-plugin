@@ -26,6 +26,7 @@ PROVIDES_TOOLS: tuple[str, ...] = (
     "wow_savedvars",
     "wow_install",
     "wow_bridge",
+    "wow_new",
 )
 
 __all__ = ["PLUGIN_ID", "PROVIDES_TOOLS", "TOOLSET", "__version__", "register_plugin"]

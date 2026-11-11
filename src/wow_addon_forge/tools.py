@@ -10,6 +10,8 @@ Invariants owned by this file:
   ``wow_savedvars`` write nothing. ``wow_install`` writes only the destination addon folder and
   a backup under the plugin data directory. ``wow_bridge`` writes the pull cursor under the
   plugin data directory and, on push, only ``Inbox.lua`` inside a bridge-enabled addon.
+  ``wow_new`` writes only the addon folder named by ``dest``, and only when that folder
+  is missing or empty.
 """
 
 from __future__ import annotations
@@ -52,6 +54,7 @@ from wow_addon_forge.install import (
 )
 from wow_addon_forge.luavm import LuaVMUnavailableError
 from wow_addon_forge.savedvars import SavedVarsReadError, read_forge_probe_errors, read_savedvars
+from wow_addon_forge.scaffold import ScaffoldError, scaffold_addon
 
 WOW_ENV_SCHEMA: dict[str, Any] = {
     "name": "wow_env",
@@ -363,6 +366,43 @@ WOW_BRIDGE_SCHEMA: dict[str, Any] = {
             },
         },
         "required": ["action"],
+        "additionalProperties": False,
+    },
+}
+
+
+_NEW_CALL_HINT = (
+    'Call wow_new with an object such as {"name": "Sample", "title": "Sample", '
+    '"modules": ["core"], "dest": "addons/Sample"}.'
+)
+WOW_NEW_SCHEMA: dict[str, Any] = {
+    "name": "wow_new",
+    "description": (
+        "Scaffold an addon from the tested building blocks into dest. "
+        "Refuses a non-empty dest. Writes only that folder."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Addon name. A Lua identifier; folder name and slash.",
+            },
+            "title": {
+                "type": "string",
+                "description": "TOC title shown in the addon list.",
+            },
+            "modules": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Blocks: core, log, sync, trust, window, bridge.",
+            },
+            "dest": {
+                "type": "string",
+                "description": "Addon folder to create. Refused when it already has files.",
+            },
+        },
+        "required": ["name", "title", "modules", "dest"],
         "additionalProperties": False,
     },
 }
@@ -1237,6 +1277,70 @@ class ForgeTools:
         """Handle a ``wow_bridge`` tool call and return its result as JSON text."""
         return to_json(self.bridge_result(args))
 
+    def new_result(self, args: object = None) -> dict[str, Any]:
+        """Return the ``wow_new`` result as plain data.
+
+        Why this exists: scaffolding is the one write that creates an addon, so the
+            refusal of a non-empty dest lives in one result the handler and tests share.
+        Args: ``name``, ``title``, ``modules``, ``dest``.
+        Returns: ``{"ok": True, addon, path, modules, slash, files}`` or an error result.
+        Failure modes: never raises.
+        """
+        if not isinstance(args, Mapping):
+            return error_result(
+                "bad-argument",
+                f"wow_new arguments must be an object, got {type(args).__name__}",
+                _NEW_CALL_HINT,
+            )
+        name = args.get("name")
+        title = args.get("title")
+        modules = args.get("modules")
+        dest = args.get("dest")
+        if not isinstance(name, str) or not name.strip():
+            return error_result(
+                "bad-argument",
+                "wow_new needs name: a non-empty addon name",
+                _NEW_CALL_HINT,
+            )
+        if not isinstance(title, str):
+            return error_result(
+                "bad-argument",
+                "wow_new needs title: the TOC title string",
+                _NEW_CALL_HINT,
+            )
+        if not isinstance(modules, list) or not all(isinstance(item, str) for item in modules):
+            return error_result(
+                "bad-argument",
+                "modules must be an array of block names",
+                _NEW_CALL_HINT,
+            )
+        if not isinstance(dest, str) or not dest.strip():
+            return error_result(
+                "bad-argument",
+                "wow_new needs dest: the addon folder to create",
+                _NEW_CALL_HINT,
+            )
+        try:
+            report = scaffold_addon(
+                name=name.strip(),
+                title=title,
+                modules=modules,
+                dest=dest.strip(),
+            )
+        except ScaffoldError as exc:
+            return error_result(exc.code, exc.message, exc.hint)
+        except OSError as exc:
+            return error_result(
+                "write-failed",
+                f"Could not write the addon: {exc}",
+                "Check that dest's parent is writable. A partial folder may remain.",
+            )
+        return {"ok": True, **report}
+
+    def handle_new(self, args: object = None, **_kwargs: Any) -> str:
+        """Handle a ``wow_new`` tool call and return its result as JSON text."""
+        return to_json(self.new_result(args))
+
 
 def wow_tools_available() -> bool:
     """Report whether the wow tools can run at all.
@@ -1342,6 +1446,13 @@ def register_tools(ctx: Any, *, tools: ForgeTools | None = None) -> list[str]:
             active.handle_bridge,
             "Pull an addon outbox or push records into Inbox.lua.",
             "🌉",
+        ),
+        (
+            "wow_new",
+            WOW_NEW_SCHEMA,
+            active.handle_new,
+            "Scaffold an addon from the tested building blocks.",
+            "🆕",
         ),
     )
     registered: list[str] = []

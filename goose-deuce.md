@@ -123,6 +123,22 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — wow_new name, module order, and bundled tests  [decision]
+- Task: T-011 (`docs/SPEC-PLUGIN.md` §3, §8)
+- What: `wow_new` requires a Lua identifier, not the wider install name regex, because the name becomes the `Sample = ns` global and `SampleDB`. Modules are written in order core, log, sync, trust, window, bridge, and a requested module pulls in the blocks it calls. `core` is always included. The bundled checks live in `Tests/scaffold.lua`, which is not listed in the TOC.
+- Why: SPEC-PLUGIN §3 names the arguments and not the identifier rule, the module order, or where the bundled tests sit. A name with a hyphen would scaffold a TOC the client cannot load. A second order would make slash and window load before the namespace.
+- Where: `src/wow_addon_forge/scaffold.py`.
+- Plan: SPEC-PLUGIN §8 left those three unspecified → pinned here. TASKS.md T-011 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
+## 2026-11-11 — security scan flags bundled test eval  [finding]
+- Task: T-011
+- What: `hermes plugins validate .` passes, and its security scan cautions on `eval_string` in `scaffold.py` because the bundled `Tests/scaffold.lua` calls `ctx.client:eval`. Left as written.
+- Why: `eval` is the wow_test client method. Renaming the generated call would make the bundled tests fail. The caution is not a validation failure.
+- Where: `src/wow_addon_forge/scaffold.py`.
+- Plan: not a plan departure. Logged so the caution is not mistaken for an oversight.
+- Commit(s): this commit
+
 ## 2026-11-11 — Classic-only theme and outbox cap  [decision]
 - Task: T-019 (`docs/SPEC-GUILDHALL.md` §9–§10, `docs/SPEC-PLUGIN.md` §7)
 - What: The window block ships one theme table, Classic, using only `BasicFrameTemplateWithInset`, `UIPanelButtonTemplate`, `UIPanelCloseButton`, and `UIPanelScrollFrameTemplate`. Modern and Nous are not tables yet. The bridge outbox keeps 50 records and drops the oldest. `inbox_seen` and `applied` are lists of ids. An officer or guild-master kind loaded by anyone else is marked seen, not applied, and a `refused` outbox record is written. The slash registered by `core` opens the window.

@@ -14,7 +14,7 @@ Two things in one repository:
 
 For WoW players and guild officers who are not programmers.
 
-Status (2026-11-11, T-012): Hermes loads the plugin and eight tools work: `wow_env`
+Status (2026-11-11, T-011): Hermes loads the plugin and nine tools work: `wow_env`
 (install and addon detection), `wow_api` (cached WoW: Forever 1.60.1 API index),
 `wow_check` (six-stage static and headless addon verification), `wow_test`
 (isolated multi-client headless Lua 5.1 test runner), `wow_errors` (reads
@@ -22,7 +22,7 @@ ForgeProbe's SavedVariables), `wow_savedvars` (reads any addon's SavedVariables 
 JSON), `wow_install` (copies or links an addon into `Interface/AddOns` after
 `wow_check` passes, backing up a replaced folder outside the game), and `wow_bridge`
 (pulls an outbox past a cursor, or pushes `Inbox.lua` for an addon that declares
-`## X-Forge-Bridge: 1`). The `core` building block (`src/wow_addon_forge/blocks/core/`)
+`## X-Forge-Bridge: 1`), and `wow_new` (scaffolds an addon from those blocks into an empty folder). The `core` building block (`src/wow_addon_forge/blocks/core/`)
 is the namespace, dispatcher, clock, store, safe codec and slash command a scaffolded
 addon stands on, plus the `log` block (record set and order-independent reducers), the `sync` block (chunked, throttled guild exchange), and the `trust` block (roster rank gates which records count), the `window` block (one lazy Classic window), and the `bridge` block (outbox and inbox for `wow_bridge`). `addons/ForgeProbe`
 ships with the plugin and passes `wow_check`; it has not been run in the live client
