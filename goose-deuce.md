@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — wow_env result shape and where its facts come from  [decision]
+- Task: T-003 (`docs/SPEC-PLUGIN.md` §3, the `wow_env` row; §11)
+- What: Three hard-to-reverse calls the spec left open, and one early file. (1) The `wow_env` JSON shape: `{ok, installs[{root, flavors[{flavor, product, version, interface, interface_source, accounts, addon_count, addons[{name, toc, title, version, interface[], supports_client}]}]}], searched[], warnings[]}`; a failure is `{ok: false, error{code, message, hint}}` with codes `no-install`, `bad-argument` and `internal-error`. (2) The client Interface number is derived from the client version in `.build.info` (major×10000 + minor×100 + patch) and labelled `interface_source: "derived-from-version"`. (3) When an addon folder holds several TOC files, the one reported is the first whose Interface list contains the client's number, else `<Folder>.toc`, else the first by name; the output names the file it read. (4) `tocfile.py` ships now with a minimal parser (headers and the file list), because `wow_env` and the Guildhall load test both need it; T-006 still owns the lint and extends the file.
+- Why: (1) Every later tool, the skill and the Desktop pane read this shape. (2) A read-only look at the owner's install shows `.build.info` has `Version` and `Product` columns and each flavor folder a `.flavor.info` holding the product code (`wowf` for `_forever_`); no file on disk states the Interface number, and 1.60.1 ↔ 16001 is the pair `docs/PLAN.md` §3 verified. (3) The same install has an addon with `_Camelot.toc` and `_Forever.toc` side by side, both `## Interface: 16001`; which one the client prefers is not verified, so the choice is by Interface match instead of by suffix.
+- Where: `src/wow_addon_forge/env.py`, `src/wow_addon_forge/tools.py`, `src/wow_addon_forge/tocfile.py`, `tests/test_env.py`, `tests/test_tools.py`, `tests/test_tocfile.py`.
+- Plan: SPEC-PLUGIN §3 lists what `wow_env` finds but not the keys, the source of the Interface number or a TOC choice rule, and T-006's Touches implied it would create `tocfile.py` → recorded here as decisions. TASKS.md corrected in this commit: T-003's Touches gains `goose-deuce.md`, and T-039 is filed for the SPEC-PLUGIN §11 settings that no task carried. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — Coverage floor set at 85%, below the measured 100%  [decision]
 - Task: T-002 (AGENTS.md → Project snapshot, "Set from the measured number, not a wish")
 - What: The floor is 85% on `src/wow_addon_forge/` lines. The measured number at T-002 is 100% over 44 statements.

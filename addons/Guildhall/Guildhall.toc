@@ -1,0 +1,13 @@
+## Interface: 16001
+## Title: Guildhall
+## Notes: Guild management for World of Warcraft: Forever.
+## Author: Auston (@SnoobieJunes)
+## Version: 0.1.0
+
+# [2026-11-11 T-003] Guildhall addon manifest (created 2026-11-11). Walking skeleton: one file.
+# Invariant: every Lua file the addon runs is listed below, in load order. SavedVariables, the
+# bridge header and the remaining Core files are added by the tasks that implement them.
+# Headers come first and comments sit with the file list, the layout of a TOC already installed
+# for this client on the development machine. Whether the live client loads this file is the
+# in-game half (docs/INGAME-CHECKLIST.md); a headless run does not show it.
+Core\Namespace.lua

@@ -14,7 +14,10 @@ Two things in one repository:
 
 For WoW players and guild officers who are not programmers.
 
-Status: planning complete, code not started. Nothing below is claimed to work
+Status (2026-11-11, T-003): walking skeleton. Hermes loads the plugin and one tool
+works: `wow_env`, which reports the WoW installs on this machine. Guildhall is one
+file that the test suite runs in a Lua 5.1 VM; it has not been loaded in the live
+game client. Everything else below is planned, and nothing is claimed to work
 until its task is closed in `TASKS.md`.
 
 ## Why a plugin and not a prompt
@@ -43,6 +46,7 @@ For development (needs [uv](https://docs.astral.sh/uv/); Hermes Agent for the la
 ```bash
 uv sync --all-groups                         # install
 uv run python -m wow_addon_forge --version   # prints: wow-addon-forge 0.1.0
+uv run python -m wow_addon_forge env         # JSON: installs, flavors, Interface number, addons
 uv run pytest -x -q                          # fast tests
 uv run pytest --cov=src/wow_addon_forge --cov-fail-under=85 && uv run ruff check . \
   && uv run ruff format --check . && uv run mypy src && hermes plugins validate .   # the full gate
@@ -51,9 +55,19 @@ uv run pytest --cov=src/wow_addon_forge --cov-fail-under=85 && uv run ruff check
 Lua code is checked and tested in an embedded Lua 5.1 VM (`lupa`), not the system `lua`.
 Install instructions for users arrive in T-014.
 
+`env` is the command-line twin of the `wow_env` tool. It only reads. It looks in
+`/Applications/World of Warcraft` and `C:\Program Files (x86)\World of Warcraft`;
+pass `--root "/path/to/World of Warcraft"` for any other folder. With no install
+found it prints a `no-install` error as JSON and exits with status 1. The Interface
+number it reports is derived from the client version (1.60.1 gives 16001) and the
+output says so in `interface_source`.
+
 ## What the plugin touches on your machine
 
 Planned, per `docs/SPEC-PLUGIN.md` §13; becomes a tested statement in T-014.
+Today the only tool is `wow_env`, and it only reads: `.build.info`, each flavor
+folder's `.flavor.info`, the TOC files under `Interface/AddOns`, and the folder
+names under `WTF/Account`, which it counts and never reports.
 
 - Network: downloads of the public API documentation mirrors, only when you run
   an API sync.

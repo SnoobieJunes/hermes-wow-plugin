@@ -7,6 +7,8 @@ Invariants owned by this file:
   Addon code that reaches for them fails here the way it fails in game.
 - ``lupa`` is imported lazily, so the plugin still loads without it and says exactly what is
   missing instead of degrading silently (docs/SPEC-PLUGIN.md §12).
+- Addon files are executed through ``run_chunk``, which reports compile and runtime failures as
+  ``LuaChunkError`` instead of letting a lupa error type leak.
 """
 
 from __future__ import annotations
@@ -98,3 +100,73 @@ def check_syntax(runtime: Any, source: str, chunk_name: str) -> str | None:
     # [2026-11-11 T-002] A leading "@" makes Lua print the name as a file, not as a source snippet.
     message = compile_only(source, "@" + chunk_name)
     return None if message is None else str(message)
+
+
+# [2026-11-11 T-003] Compile and call stay in one Lua helper so a failure in either phase comes
+# back as values Python can classify, instead of a lupa error whose type callers must not depend
+# on. `tostring` on the failure keeps a non-string error value (for example `error({})`) from
+# crossing the boundary as a Lua object Python cannot report.
+_RUN_CHUNK = """
+return function(source, chunk_name, ...)
+    local compiled, message = loadstring(source, chunk_name)
+    if not compiled then return "compile", tostring(message) end
+    local ok, failure = pcall(compiled, ...)
+    if not ok then return "runtime", tostring(failure) end
+    return nil, nil
+end
+"""
+
+
+class LuaChunkError(RuntimeError):
+    """Raised by run_chunk when a chunk fails to compile or raises while running.
+
+    Why this exists:
+        Callers report addon failures without depending on a lupa error type, so the VM seam
+        translates both failure phases into this one exception.
+
+    Args:
+        phase: ``"compile"`` when Lua rejected the source, ``"runtime"`` when the compiled
+            chunk raised.
+        message: Lua's own message for the failure.
+
+    Attributes:
+        phase: The phase that failed, as passed in.
+        message: Lua's message, as passed in. ``str(exc)`` is ``f"{phase}: {message}"``.
+    """
+
+    def __init__(self, phase: str, message: str) -> None:
+        self.phase = phase
+        self.message = message
+        super().__init__(f"{phase}: {message}")
+
+
+def run_chunk(runtime: Any, source: str, chunk_name: str, *args: Any) -> None:
+    """Run ``source`` as one addon file, the way the WoW client runs it.
+
+    Why this exists:
+        The client executes each addon file as a chunk called with arguments (the addon name
+        and the shared addon table), which the file reads as ``...``. Running a file any other
+        way here would exercise a shape the game never produces.
+
+    Args:
+        runtime: A runtime from ``new_runtime``.
+        source: The Lua source text.
+        chunk_name: The file name to show in messages (for example ``Core/Namespace.lua``).
+        *args: Passed to the chunk as its ``...``. Callers pass a Lua table made with
+            ``runtime.table()`` when the chunk expects a table, as the shared addon table.
+
+    Returns:
+        ``None`` on success. Return values of the chunk are discarded: the client ignores
+        them, and addon files communicate through the shared table instead.
+
+    Failure modes:
+        Raises ``LuaChunkError`` with phase ``"compile"`` when the source does not compile,
+        and with phase ``"runtime"`` when the chunk raises. The message is Lua's own and
+        starts with ``chunk_name:<line>:`` for ordinary errors.
+    """
+    runner = runtime.execute(_RUN_CHUNK)
+    # [2026-11-11 T-003] unpack_returned_tuples=True makes the helper's two return values a
+    # Python 2-tuple; a leading "@" makes Lua print chunk_name as a file in its messages.
+    phase, message = runner(source, "@" + chunk_name, *args)
+    if phase is not None:
+        raise LuaChunkError(str(phase), str(message))

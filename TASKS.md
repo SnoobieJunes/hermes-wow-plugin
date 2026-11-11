@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-003 — Build the walking skeleton: the plugin loads, one real tool answers, one addon file runs headless
-      Why: Prove the architecture end to end before building on it: Hermes loads the plugin, a tool reads an install layout through an injected filesystem, and addon Lua executes in Lua 5.1.
-      Accept: `hermes plugins validate .` passes with one declared tool `wow_env`; a unit test feeds `wow_env` a fake install tree and gets flavor `_forever_`, Interface `16001` and the addon list back as JSON; a test loads `addons/Guildhall/Guildhall.toc` and its first Lua file in the Lua 5.1 VM with no error; the full gate is green.
-      Touches: `plugin.yaml`, `__init__.py`, `src/wow_addon_forge/`, `addons/Guildhall/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-002   Gated: none
 - [ ] T-005 — Build the API index and the `wow_api` tool
       Why: Every other check needs one queryable truth for what exists in the user's client build (SPEC-PLUGIN §5).
       Accept: Unit tests over a small hand-written fixture in Blizzard's documentation-table format (no Blizzard source committed) prove functions, events and enums are indexed with `restricted`, `secret` and `deprecated` fields, and that `lookup` of a missing name returns `unknown` with nearest matches. One live run, its output recorded in the commit body: `uv run python -m wow_addon_forge api sync --flavor forever` then `api status` prints build `1.60.1` with more than 4000 functions and more than 1200 events; `api lookup C_ChatInfo.SendAddonMessage` shows four arguments; `api lookup GetItemInfo` reports it is not a C API function and names `C_Item.GetItemInfo`; `api lookup COMBAT_LOG_EVENT_UNFILTERED` prints the restriction flags read from the documentation. `wow_api` is registered and `hermes plugins validate .` passes. Full gate green.
@@ -39,6 +35,10 @@
       Why: The tools need the workflow that uses them, and a path that does not depend on the model choosing a tool (SPEC-PLUGIN §2, §9).
       Accept: `skills/wow-addon-builder/SKILL.md` has valid frontmatter and is registered by `register(ctx)`; `/wow status` and the CLI `status` verb print install, build and index state from a fake install in tests; the CLI `check <fixture>` exits non-zero on verdict `fail`; `hermes plugins validate .` passes. Full gate green.
       Touches: `skills/wow-addon-builder/SKILL.md`, `src/wow_addon_forge/tools.py`, `src/wow_addon_forge/cli.py`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-012   Gated: none
+- [ ] T-039 — Declare the plugin settings and make `wow_env` honour `wow_root`
+      Why: SPEC-PLUGIN §11 names three settings (`wow_root`, `flavor`, `api_source`) and no task carried them; without `wow_root`, a user whose game is outside the two default folders must pass `root` on every call. Found while building T-003.
+      Accept: `plugin.yaml` declares `config_schema` with `wow_root`, `flavor` (default `_forever_`) and `api_source` (`auto` | `export` | `mirror`); a unit test registers the plugin with a context that supplies `wow_root` (read the way `hermes-coreai` reads its settings) naming a fake install, and `wow_env` with no `root` finds it and searches nowhere else; with no setting the default locations are searched; `hermes plugins validate .` reports the config schema as declared and passes. Full gate green.
+      Touches: `plugin.yaml`, `src/wow_addon_forge/tools.py`, `src/wow_addon_forge/__init__.py`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-003   Gated: none
 - [ ] T-014 — Catalog-ready baseline
       Why: From this commit on, any commit can be pinned for the hackathon entry (PLAN §5).
       Accept: `hermes plugins validate . --install-deps` passes with 0 failures; `LICENSE` (MIT), `SECURITY.md` and a README disclosure section covering SPEC-PLUGIN §13 exist; `.github/workflows/ci.yml` runs the full gate on macOS and Linux; `plugin.yaml` `provides_tools` lists exactly the registered tools; version `0.1.0` agrees in `plugin.yaml`, `pyproject.toml` and the package; a cold clone passes the gate.
@@ -155,6 +155,10 @@
 ## Dropped
 
 ## Done
+- [x] T-003 — Build the walking skeleton: the plugin loads, one real tool answers, one addon file runs headless (2026-11-11, this commit)
+      Why: Prove the architecture end to end before building on it: Hermes loads the plugin, a tool reads an install layout through an injected filesystem, and addon Lua executes in Lua 5.1.
+      Accept: `hermes plugins validate .` passes with one declared tool `wow_env`; a unit test feeds `wow_env` a fake install tree and gets flavor `_forever_`, Interface `16001` and the addon list back as JSON; a test loads `addons/Guildhall/Guildhall.toc` and its first Lua file in the Lua 5.1 VM with no error; the full gate is green.
+      Touches: `plugin.yaml`, `__init__.py`, `src/wow_addon_forge/`, `addons/Guildhall/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-002   Gated: none
 - [x] T-002 — Stand up the toolchain, the mechanical gates, and a real smoke test (2026-11-11, this commit)
       Why: Every later task needs one automated gate: tests, lint, format, types, coverage, and Hermes plugin validation.
       Accept: `uv sync --all-groups`, `uv run pytest`, `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy src` and `hermes plugins validate .` all pass; the smoke test runs a Lua chunk in the embedded Lua 5.1 VM and imports the package; every `TBD step 3` marker in `AGENTS.md` and `LOOP.md` is replaced; the AGENTS.md layout table gains the `plugin.yaml`, `__init__.py` row; a cold clone passes the full gate.

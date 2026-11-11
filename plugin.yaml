@@ -1,7 +1,9 @@
 # [2026-11-11 T-002] Root Hermes plugin manifest for wow-addon-forge (created 2026-11-11).
 # Invariants:
 #   1. kind MUST be "standalone" so PluginManager calls register(ctx).
-#   2. provides_tools MUST match the ctx.register_tool calls 1:1 (empty until T-003 adds wow_env).
+#   2. provides_tools MUST match the ctx.register_tool calls 1:1.
+#      [2026-11-11 T-003] wow_env is the first; tests/test_smoke.py compares this list with
+#      wow_addon_forge.PROVIDES_TOOLS and with what register(ctx) actually registers.
 manifest_version: 2
 name: wow-addon-forge
 version: 0.1.0
@@ -17,5 +19,6 @@ tags:
   - addons
   - lua
   - gaming
-provides_tools: []
+provides_tools:
+  - wow_env
 provides_hooks: []

@@ -15,7 +15,9 @@ from typing import Any
 __version__ = "0.1.0"
 PLUGIN_ID = "wow-addon-forge"
 TOOLSET = "wow"
-PROVIDES_TOOLS: tuple[str, ...] = ()
+# [2026-11-11 T-003] wow_env is the first tool; each later tool task appends its name here and
+# in plugin.yaml in the same commit.
+PROVIDES_TOOLS: tuple[str, ...] = ("wow_env",)
 
 __all__ = ["PLUGIN_ID", "PROVIDES_TOOLS", "TOOLSET", "__version__", "register_plugin"]
 
@@ -34,9 +36,12 @@ def register_plugin(ctx: Any) -> dict[str, Any]:
         ``{"plugin", "version", "tools"}`` — the identity and the tool names registered.
 
     Failure modes:
-        Raises ``TypeError`` when ``ctx`` is ``None``.
+        Raises ``TypeError`` when ``ctx`` is ``None`` or has no ``register_tool``.
     """
     if ctx is None:
         raise TypeError("register_plugin(ctx) needs a Hermes PluginContext, got None")
-    # [2026-11-11 T-002] No surfaces yet: the first tool (wow_env) arrives in T-003.
-    return {"plugin": PLUGIN_ID, "version": __version__, "tools": list(PROVIDES_TOOLS)}
+    # [2026-11-11 T-003] Imported here, not at module top: tools.py imports this package for
+    # TOOLSET, so a top-level import would be a cycle, and the plugin root stays import-light.
+    from wow_addon_forge.tools import register_tools
+
+    return {"plugin": PLUGIN_ID, "version": __version__, "tools": register_tools(ctx)}
