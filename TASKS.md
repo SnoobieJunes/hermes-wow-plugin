@@ -83,6 +83,10 @@
 ## Dropped
 
 ## Done
+- [x] T-056 — Rewrite README for humans (2026-11-11, this commit)
+      Why: The GitHub front page is the hackathon's first impression; the current one leads with tool internals instead of what a player gets.
+      Accept: README leads with value, features and roadmap in plain language; install/run/test commands stay executable as written (AGENTS.md contract); the §13 disclosure and honest headless-vs-in-game status stay accurate (no feature claimed shipped that TASKS.md has not closed). Full gate green.
+      Touches: `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-051   Gated: none
 - [x] T-055 — Evolve the checklist guard test past the T-035 live run (2026-11-11, this commit)
       Why: The T-009 guard asserted INGAME-CHECKLIST section A stays NOT RUN until a live run; T-035 was that run, and its commit landed red with a false Tests line (goose-deuce.md 2026-11-11 "T-035 landed on a red suite with a false Tests line; checklist guard evolved").
       Accept: The guard enforces the result format (five results, each NOT RUN or dated PASS/FAIL with build token); full suite green. Full gate green.

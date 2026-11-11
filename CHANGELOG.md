@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-056 — README rewritten for humans: the value for players and officers, Guildhall's features, the roadmap from the task board, and an honest-status section, with install/test commands and the catalog disclosure unchanged (no user-visible change)
 2026-11-11 — T-055 — The in-game checklist's guard test now enforces its dated result format after the first live run made its all-NOT-RUN premise expire (no user-visible change)
 2026-11-11 — T-035 — First live-client probe run recorded: WoW Forever 1.60.1 (70888, Interface 16001), guild addon-message echo works, all 11 probed events valid (4 registrations client-blocked — see T-052), all 13 probed APIs present; results in docs/INGAME-CHECKLIST.md lines 1–7 (no user-visible change)
 2026-11-11 — T-053 — The Guildhall window now has a working tab rail: opening `/gh` shows Board/Calendar/Marks buttons with the first tab already open, and tabs switch in their own containers instead of stacking (the live window previously opened empty with no way to reach any tab)
