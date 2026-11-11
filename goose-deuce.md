@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — Stale comment in the marks spend test, corrected after the shipping commit  [process]
+- Task: T-021 (`docs/SPEC-GUILDHALL.md` §7; AGENTS.md → Comment standard)
+- What: T-021 shipped in c660161 with a test comment in `addons/Guildhall/Tests/marks.lua` asserting that `Sync.author` "marks a self-authored record unverified." That mechanism does not exist: `Sync.author` applies the record straight into the log, and only `Trust.receive` sets `unverified` (on the wire path, for records relayed by a non-officer sender). The assertion itself stands for the real reason — a spend is a self-only debit and the member holds 0 after the stake, so `math.min(0, 5)` debits nothing — so the comment was corrected to state the actual mechanism; no code or test changed.
+- Why: the taking-over session's step-8 review (AGENTS.md → The task loop) ran after the shipping commit, because the original session left the tree uncommitted at hand-off and the commit landed while this session was verifying it. A stale comment is a bug under the comment standard ("asserting only what is true and exercised"); the correction is logged here instead of rewriting the shipping commit. The same hand-off also let this session add a duplicate T-021 CHANGELOG line before the state change was noticed; it was reverted before staging, and nothing of it is in this commit.
+- Where: `addons/Guildhall/Tests/marks.lua` (comment lines only), `goose-deuce.md`.
+- Plan: the comment standard says changed lines carry re-stamped, true comments → corrected in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): c660161 (shipping commit; the correction is this commit, logged the same day)
+
 ## 2026-11-11 — sync wire gains a Codec payload form  [approach]
 - Task: T-047 (`docs/SPEC-GUILDHALL.md` §4–§5)
 - What: The sync block's `A`/`D` records keep the T-017 legacy form byte-identical when the payload is exactly `{who, n}`; any other payload rides as `A2,a,s,t,k,<Codec text>` / `D2,…` with the Codec output as the last field (commas inside it are safe, the chunker splits long texts). A payload the Codec cannot encode is never enqueued — it stays in the local log only, and that is stated at the author call site.

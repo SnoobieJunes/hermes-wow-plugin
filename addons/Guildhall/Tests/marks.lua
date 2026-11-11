@@ -134,9 +134,10 @@ test('spend_never_below_zero', function(ctx)
     assert_true(bob:eval('return Guildhall.Marks.spend(5, "quest1")'), 'the stake spend returned true')
     ctx.world:advance(5)
     assert_eq(bob:eval('return Guildhall.Marks.balance("' .. bob.full_name .. '")'), 0, 'the stake spend emptied the balance')
-    -- [2026-11-11 T-021] Bob forges a spend naming himself: the fold refuses it
-    -- because Sync.author marks a self-authored record unverified, so no client
-    -- can mint Marks out of a crafted payload.
+    -- [2026-11-11 T-021] Bob crafts a spend straight into the log. A spend is a
+    -- self-only debit and Bob holds 0 after the stake, so the fold debits
+    -- math.min(0, 5) = nothing: a crafted spend can never credit, and it cannot
+    -- drive an honest balance below zero on the officer client either.
     bob:eval([[
         local record = {
             a = "]] .. bob.full_name .. [[",
