@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-019 — Building blocks `window` and `bridge`: one lazy window with the Classic theme, and the bridge client
-      Why: Every scaffolded addon needs a window that costs nothing until opened and, optionally, the Discord seam (SPEC-GUILDHALL §9, SPEC-PLUGIN §7).
-      Accept: Headless: the window is built on first open and not before; a tab a module registers builds only when first shown; the theme is one table and Classic uses only frame templates the API index confirms for this build; the bridge block writes an outbox that `wow_bridge pull` reads and ingests an `Inbox.lua` written by `wow_bridge push`, never applying an item twice. An addon instantiated from every block gets `wow_check` verdict `pass`. Full gate green.
-      Touches: `src/wow_addon_forge/blocks/window/`, `src/wow_addon_forge/blocks/bridge/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-018, T-012   Gated: none
 - [ ] T-011 — `wow_new`: scaffold an addon from the building blocks
       Why: A weak model, or a user in a hurry, starts from code that already passes; it is also how Guildhall will be created (SPEC-PLUGIN §3, §8).
       Accept: `wow_new` with every block produces an addon whose `wow_check` verdict is `pass` and whose bundled Lua tests pass under `wow_test`; with only `core` it produces an addon that loads headless; it refuses a non-empty `dest`; the tool is registered and `hermes plugins validate .` passes. Full gate green.
@@ -127,6 +123,10 @@
 ## Dropped
 
 ## Done
+- [x] T-019 — Building blocks `window` and `bridge`: one lazy window with the Classic theme, and the bridge client (2026-11-11, this commit)
+      Why: Every scaffolded addon needs a window that costs nothing until opened and, optionally, the Discord seam (SPEC-GUILDHALL §9, SPEC-PLUGIN §7).
+      Accept: Headless: the window is built on first open and not before; a tab a module registers builds only when first shown; the theme is one table and Classic uses only frame templates the API index confirms for this build; the bridge block writes an outbox that `wow_bridge pull` reads and ingests an `Inbox.lua` written by `wow_bridge push`, never applying an item twice. An addon instantiated from every block gets `wow_check` verdict `pass`. Full gate green.
+      Touches: `src/wow_addon_forge/blocks/window/`, `src/wow_addon_forge/blocks/bridge/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-018, T-012   Gated: none
 - [x] T-018 — Building block `trust`: roles and record acceptance (2026-11-11, this commit)
       Why: With no signatures, rank and sender are the only defences; they must hold (SPEC-GUILDHALL §6).
       Accept: Headless: a member-authored officer-kind record never reaches derived state; the same record relayed by an officer does; a record received from a third party is stored marked unverified and excluded from privileged effects; a self-only kind naming another character is rejected; demoting an author stops later records from applying; a non-member's messages are ignored. `wow_check` verdict `pass`. Full gate green.

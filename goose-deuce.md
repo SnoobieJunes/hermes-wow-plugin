@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — Classic-only theme and outbox cap  [decision]
+- Task: T-019 (`docs/SPEC-GUILDHALL.md` §9–§10, `docs/SPEC-PLUGIN.md` §7)
+- What: The window block ships one theme table, Classic, using only `BasicFrameTemplateWithInset`, `UIPanelButtonTemplate`, `UIPanelCloseButton`, and `UIPanelScrollFrameTemplate`. Modern and Nous are not tables yet. The bridge outbox keeps 50 records and drops the oldest. `inbox_seen` and `applied` are lists of ids. An officer or guild-master kind loaded by anyone else is marked seen, not applied, and a `refused` outbox record is written. The slash registered by `core` opens the window.
+- Why: The accept requires one theme table and names Classic. The spec file list also names Modern and Nous, and does not name the outbox cap or the seen-id shape. `wow_bridge push` already reads `inbox_seen` as a list of ids; a map would not match it.
+- Where: `src/wow_addon_forge/blocks/window/UI/Theme.lua`, `src/wow_addon_forge/blocks/bridge/Bridge.lua`.
+- Plan: SPEC-GUILDHALL §9 left the other themes unnamed as tables → Classic only, logged here. TASKS.md T-019 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — Trust kind table and reduce-time rank  [decision]
 - Task: T-018 (`docs/SPEC-GUILDHALL.md` §6)
 - What: `officerRank` defaults to 1. Starter kinds: `marks.credit`, `marks.debit`, and `log.checkpoint` need an officer; `settings.set` needs the guild master; `self.act` is member-only and may name only its author. A direct record whose author is now below that minimum does not affect balances, including one stored before the demotion. An officer relay is marked `relay` and counts while that sender is still an officer. A third-party sender stores the record with `unverified` and it does not count. `receive` returns `ignored`, `rejected`, `unverified`, or `accepted`. Sync asks Trust before applying a wire record when Trust is loaded.

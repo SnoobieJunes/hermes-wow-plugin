@@ -24,7 +24,7 @@ JSON), `wow_install` (copies or links an addon into `Interface/AddOns` after
 (pulls an outbox past a cursor, or pushes `Inbox.lua` for an addon that declares
 `## X-Forge-Bridge: 1`). The `core` building block (`src/wow_addon_forge/blocks/core/`)
 is the namespace, dispatcher, clock, store, safe codec and slash command a scaffolded
-addon stands on, plus the `log` block (record set and order-independent reducers), the `sync` block (chunked, throttled guild exchange), and the `trust` block (roster rank gates which records count). `addons/ForgeProbe`
+addon stands on, plus the `log` block (record set and order-independent reducers), the `sync` block (chunked, throttled guild exchange), and the `trust` block (roster rank gates which records count), the `window` block (one lazy Classic window), and the `bridge` block (outbox and inbox for `wow_bridge`). `addons/ForgeProbe`
 ships with the plugin and passes `wow_check`; it has not been run in the live client
 (`docs/INGAME-CHECKLIST.md` section A is still `NOT RUN`). Secret-value simulation in
 the headless runtime arrives in T-034; until it lands, `issecretvalue` returns `false`
