@@ -7,10 +7,6 @@
       Why: Live T-035 evidence: the guild echo sender arrived as `Friar Baggins` (space, no `-Realm` suffix), while records author `Name-Realm` from UnitName+GetRealmName and Trust resolves roles by name — a mismatch would silently un-verify real guild traffic.
       Accept: Headless: a client whose wire sender lacks the realm suffix (or contains a space) still has its officer records applied and its claims attested exactly as the Name-Realm form does today; the normalisation is in one seam and named. Full gate green.
       Touches: `src/wow_addon_forge/blocks/trust/`, `src/wow_addon_forge/blocks/sync/`, `addons/Guildhall/Core/`, `tests/`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-018, T-035   Gated: none
-- [ ] T-035 — Run the in-game probe
-      Why: Only the live client says which events fire and whether guild addon messages echo (INGAME-CHECKLIST section A).
-      Accept: The owner installs ForgeProbe, logs in on a guilded character, runs `/forge probe`, reloads; `wow_errors` output is pasted into the task; INGAME-CHECKLIST lines 1–5 carry results; any detection the probe shows unusable gets a task.
-      Touches: `docs/INGAME-CHECKLIST.md`, `TASKS.md`, `CHANGELOG.md`   Depends: T-009, T-010   Gated: owner
 - [ ] T-036 — In-game acceptance of Guildhall
       Why: Headless passes are not in-game passes (LOOP.md rule 9).
       Accept: INGAME-CHECKLIST lines 6–12 carry results from the live client; every FAIL has a task.
@@ -87,6 +83,11 @@
 ## Dropped
 
 ## Done
+- [x] T-035 — Run the in-game probe (2026-11-11, this commit)
+      Why: Only the live client says which events fire and whether guild addon messages echo (INGAME-CHECKLIST section A).
+      Accept: The owner installs ForgeProbe, logs in on a guilded character, runs `/forge probe`, reloads; `wow_errors` output is pasted into the task; INGAME-CHECKLIST lines 1–5 carry results; any detection the probe shows unusable gets a task.
+      Touches: `docs/INGAME-CHECKLIST.md`, `TASKS.md`, `CHANGELOG.md`   Depends: T-009, T-010   Gated: owner
+      Owner run 2026-11-11 (wow_errors, pasted in session): build 1.60.1/70888, Interface 16001; echo sent=true result=0 received=true sender="Friar Baggins"; 11/11 events valid, 13/13 APIs present, restrictions inactive; ADDON_ACTION_FORBIDDEN x4 per RunProbe (Core.lua events loop) -> T-052 fixed, T-054 filed.
 - [x] T-053 — Window block: a visible tab rail and per-tab containers (2026-11-11, this commit)
       Why: Live T-036 evidence: `/gh` opens the window but there are no tab buttons and no tab is ever shown, so Board/Calendar/Marks are unreachable in game (headless tests call show_tab directly and cannot see this).
       Accept: Headless: opening the window builds one button per registered tab and shows the first tab; clicking a button (its OnClick) shows that tab's container and hides the others; registering after build still gets a button. Block and scaffolded copy identical modulo the name token. `wow_check` verdict `pass`. Full gate green. Live retest recorded under T-036.
