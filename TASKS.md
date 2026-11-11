@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-010 — `wow_savedvars` and `wow_install`
-      Why: Reading game data and installing safely are the two file seams to the client (SPEC-PLUGIN §3 write rules).
-      Accept: Against a temporary fake install: SavedVariables with nested tables, long strings and negative numbers convert to JSON; a dotted `path` returns one subtree; install copies the addon, backs up a pre-existing folder into the plugin data directory, refuses when `wow_check` fails unless `force`, writes nothing under `dry_run`, refuses `../` and absolute names, and reports `reload` versus `restart` correctly. No test touches `/Applications`. Full gate green.
-      Touches: `src/wow_addon_forge/savedvars.py`, `src/wow_addon_forge/install.py`, `src/wow_addon_forge/tools.py`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-008   Gated: none
 - [ ] T-012 — `wow_bridge` and the bridge contract
       Why: The Discord link is two files; the contract makes any addon able to use it (SPEC-PLUGIN §7).
       Accept: With a SavedVariables fixture and a temporary addon folder: `pull` returns only records past the cursor and advances it; a second `pull` returns none; `push` writes an `Inbox.lua` that compiles in the Lua 5.1 VM and keeps earlier unconsumed items; `push` to an addon without `## X-Forge-Bridge: 1` is refused; `uv run python -m wow_addon_forge bridge pull --format discord` prints one line per record and nothing when there is none. Full gate green.
@@ -151,6 +147,10 @@
 ## Dropped
 
 ## Done
+- [x] T-010 — `wow_savedvars` and `wow_install` (2026-11-11, this commit)
+      Why: Reading game data and installing safely are the two file seams to the client (SPEC-PLUGIN §3 write rules).
+      Accept: Against a temporary fake install: SavedVariables with nested tables, long strings and negative numbers convert to JSON; a dotted `path` returns one subtree; install copies the addon, backs up a pre-existing folder into the plugin data directory, refuses when `wow_check` fails unless `force`, writes nothing under `dry_run`, refuses `../` and absolute names, and reports `reload` versus `restart` correctly. No test touches `/Applications`. Full gate green.
+      Touches: `src/wow_addon_forge/savedvars.py`, `src/wow_addon_forge/install.py`, `src/wow_addon_forge/tools.py`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-008   Gated: none
 - [x] T-009 — ForgeProbe addon and `wow_errors` (2026-11-11, this commit)
       Why: The docs say what exists; only the live client says what fires. ForgeProbe records it and catches Lua errors so the agent can read them (SPEC-PLUGIN §8).
       Accept: `wow_check addons/ForgeProbe` verdict `pass`; headless, an error raised by a second fixture addon lands in ForgeProbe's saved ring with message and stack; `/forge probe` fills the probe table in the stub; `wow_errors` turns a SavedVariables fixture into JSON with `errors[]` and `probe{}`. Full gate green. The in-game half stays `NOT RUN` in `docs/INGAME-CHECKLIST.md` section A.

@@ -25,4 +25,6 @@ provides_tools:
   - wow_check
   - wow_test
   - wow_errors
+  - wow_savedvars
+  - wow_install
 provides_hooks: []

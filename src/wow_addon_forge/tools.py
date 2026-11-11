@@ -6,8 +6,9 @@ Invariants owned by this file:
 - ``register_tools`` registers exactly the names in ``wow_addon_forge.PROVIDES_TOOLS``, which
   plugin.yaml ``provides_tools`` must match 1:1.
 - ``wow_env`` writes nothing. ``wow_api`` writes only the API index cache, and only on ``sync``,
-  which is also the plugin's only network call. ``wow_check``, ``wow_test``, and ``wow_errors``
-  write nothing.
+  which is also the plugin's only network call. ``wow_check``, ``wow_test``, ``wow_errors`` and
+  ``wow_savedvars`` write nothing. ``wow_install`` writes only the destination addon folder and
+  a backup under the plugin data directory.
 """
 
 from __future__ import annotations
@@ -31,9 +32,18 @@ from wow_addon_forge.apidocs import (
     normalise_flavor,
 )
 from wow_addon_forge.check import check_addon, run_addon_tests
-from wow_addon_forge.env import FileSystem, RealFileSystem, detect_installs
+from wow_addon_forge.env import DEFAULT_ROOTS, FileSystem, RealFileSystem, detect_installs
+from wow_addon_forge.install import (
+    InstallError,
+    RealInstallWriter,
+    addon_name,
+    default_data_dir,
+    flavor_folder,
+    install_addon,
+    locate_addons_dir,
+)
 from wow_addon_forge.luavm import LuaVMUnavailableError
-from wow_addon_forge.savedvars import SavedVarsReadError, read_forge_probe_errors
+from wow_addon_forge.savedvars import SavedVarsReadError, read_forge_probe_errors, read_savedvars
 
 WOW_ENV_SCHEMA: dict[str, Any] = {
     "name": "wow_env",
@@ -221,6 +231,88 @@ WOW_ERRORS_SCHEMA: dict[str, Any] = {
 }
 
 
+_SAVEDVARS_CALL_HINT = (
+    'Call wow_savedvars with an object such as {"addon": "Guildhall"} or '
+    '{"addon": "Guildhall", "path": "GuildhallDB.marker"}.'
+)
+_INSTALL_CALL_HINT = 'Call wow_install with an object such as {"path": "addons/Guildhall"}.'
+
+WOW_SAVEDVARS_SCHEMA: dict[str, Any] = {
+    "name": "wow_savedvars",
+    "description": (
+        "Read one addon's SavedVariables from the World of Warcraft install as JSON, "
+        "optionally one dotted path. Read-only: writes nothing. Account folder names "
+        "are never included."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "addon": {
+                "type": "string",
+                "description": "Addon folder name whose SavedVariables file to read.",
+            },
+            "flavor": {
+                "type": "string",
+                "description": "Optional game flavor folder (default: _forever_).",
+            },
+            "account": {
+                "type": "string",
+                "description": "Optional game account folder when more than one holds the file.",
+            },
+            "character": {
+                "type": "string",
+                "description": ("Optional character: Char, Realm/Char, or Char-Realm."),
+            },
+            "path": {
+                "type": "string",
+                "description": (
+                    "Optional dotted path into the parsed data. List indexes are 0-based."
+                ),
+            },
+        },
+        "required": ["addon"],
+        "additionalProperties": False,
+    },
+}
+
+WOW_INSTALL_SCHEMA: dict[str, Any] = {
+    "name": "wow_install",
+    "description": (
+        "Install an addon into Interface/AddOns after wow_check passes. Backs up a "
+        "replaced folder into the plugin data directory. Says whether /reload or a "
+        "client restart is needed. dry_run writes nothing."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "path": {
+                "type": "string",
+                "description": "Path of the addon folder to install.",
+            },
+            "flavor": {
+                "type": "string",
+                "description": "Optional game flavor (default: forever / _forever_).",
+            },
+            "mode": {
+                "type": "string",
+                "enum": ["copy", "link"],
+                "description": "copy (default) or link the addon folder into AddOns.",
+            },
+            "dry_run": {
+                "type": "boolean",
+                "description": "Report the install without writing. Default false.",
+            },
+            "force": {
+                "type": "boolean",
+                "description": "Install even when wow_check verdict is fail. Default false.",
+            },
+        },
+        "required": ["path"],
+        "additionalProperties": False,
+    },
+}
+
+
 def to_json(payload: Mapping[str, Any]) -> str:
     """Serialise ``payload`` as the JSON text a Hermes tool handler returns.
 
@@ -294,12 +386,14 @@ class ForgeTools:
         fetcher: Fetcher | None = None,
         cache_dir: str | os.PathLike[str] | None = None,
         clock: Callable[[], float] = time.time,
+        data_dir: str | os.PathLike[str] | None = None,
     ) -> None:
         self._fs = fs if fs is not None else RealFileSystem()
         self._default_roots = default_roots
         self._fetcher = fetcher
         self._cache_dir = cache_dir
         self._clock = clock
+        self._data_dir = data_dir
 
     def env_result(self, args: object = None) -> dict[str, Any]:
         """Return the ``wow_env`` result as plain data.
@@ -775,6 +869,198 @@ class ForgeTools:
         """Handle a ``wow_errors`` tool call and return its result as JSON text."""
         return to_json(self.errors_result(args))
 
+    def savedvars_result(self, args: object = None) -> dict[str, Any]:
+        """Return the ``wow_savedvars`` result as plain data.
+
+        Why this exists:
+            Reads one addon's SavedVariables through the injected filesystem and returns
+            JSON-shaped data, or one dotted path of it, without ever naming an account.
+
+        Args:
+            args: ``addon`` (required) plus optional ``flavor``, ``account``, ``character``
+                and ``path`` (the dotted path).
+
+        Returns:
+            ``{"ok": True, "addon", "flavor", "scope", "data"}`` or an error result.
+
+        Failure modes:
+            Never raises. Maps ``SavedVarsReadError`` and a missing Lua VM to the standard
+            envelope.
+        """
+        if not isinstance(args, Mapping):
+            return error_result(
+                "bad-argument",
+                f"wow_savedvars arguments must be an object, got {type(args).__name__}",
+                _SAVEDVARS_CALL_HINT,
+            )
+        addon = args.get("addon")
+        if not isinstance(addon, str) or not addon.strip():
+            return error_result(
+                "bad-argument",
+                "wow_savedvars needs addon: a non-empty addon folder name",
+                _SAVEDVARS_CALL_HINT,
+            )
+        for key in ("flavor", "account", "character", "path"):
+            value = args.get(key)
+            if value is not None and not isinstance(value, str):
+                return error_result(
+                    "bad-argument",
+                    f"{key} must be a string, got {type(value).__name__}",
+                    _SAVEDVARS_CALL_HINT,
+                )
+        try:
+            report = read_savedvars(
+                self._fs,
+                addon=addon.strip(),
+                roots=self._default_roots,
+                flavor=args.get("flavor"),
+                account=args.get("account"),
+                character=args.get("character"),
+                dotted_path=args.get("path"),
+            )
+        except SavedVarsReadError as exc:
+            return error_result(exc.code, exc.message, exc.hint)
+        except LuaVMUnavailableError as exc:
+            return error_result(
+                "lua-vm-unavailable",
+                str(exc),
+                "Install the plugin's one dependency, lupa>=2.1,<3, then run the call again.",
+            )
+        except Exception as exc:
+            return error_result(
+                "internal-error",
+                f"{type(exc).__name__}: {exc}",
+                "This is a bug in wow-addon-forge; please report it with this message.",
+            )
+        return {"ok": True, **report}
+
+    def handle_savedvars(self, args: object = None, **_kwargs: Any) -> str:
+        """Handle a ``wow_savedvars`` tool call and return its result as JSON text."""
+        return to_json(self.savedvars_result(args))
+
+    def _install_flag(self, args: Mapping[str, Any], key: str) -> bool | dict[str, Any]:
+        value = args.get(key, False)
+        if isinstance(value, bool):
+            return value
+        return error_result(
+            "bad-argument",
+            f"{key} must be a boolean, got {type(value).__name__}",
+            _INSTALL_CALL_HINT,
+        )
+
+    def install_result(self, args: object = None) -> dict[str, Any]:
+        """Return the ``wow_install`` result as plain data.
+
+        Why this exists:
+            Install is the write seam to the client. A failed check blocks it unless
+            ``force`` is set, ``dry_run`` writes nothing, and a backup never lands in
+            the game folder.
+
+        Args:
+            args: ``path`` (required), optional ``flavor``, ``mode`` (``copy`` or ``link``),
+                ``dry_run`` and ``force``.
+
+        Returns:
+            ``{"ok": True, ...}`` with ``action`` ``reload`` or ``restart``, ``dest``,
+            ``backup`` and ``dry_run``; or an error result. ``force`` does not override
+            a check that could not run (missing index, bad path).
+
+        Failure modes:
+            Never raises. ``check-failed`` means the verdict was ``fail`` and ``force``
+            was not set, and nothing was written.
+        """
+        if not isinstance(args, Mapping):
+            return error_result(
+                "bad-argument",
+                f"wow_install arguments must be an object, got {type(args).__name__}",
+                _INSTALL_CALL_HINT,
+            )
+        path = args.get("path")
+        if not isinstance(path, str) or not path.strip():
+            return error_result(
+                "bad-argument",
+                "wow_install needs path: a non-empty addon folder path",
+                _INSTALL_CALL_HINT,
+            )
+        flavor = args.get("flavor")
+        if flavor is not None and not isinstance(flavor, str):
+            return error_result(
+                "bad-argument",
+                f"flavor must be a string, got {type(flavor).__name__}",
+                _INSTALL_CALL_HINT,
+            )
+        mode = args.get("mode", "copy")
+        if not isinstance(mode, str):
+            return error_result(
+                "bad-argument",
+                f"mode must be a string, got {type(mode).__name__}",
+                _INSTALL_CALL_HINT,
+            )
+        dry_run = self._install_flag(args, "dry_run")
+        if isinstance(dry_run, dict):
+            return dry_run
+        force = self._install_flag(args, "force")
+        if isinstance(force, dict):
+            return force
+        # [2026-11-11 T-010] Refuse traversal and absolute names before the check reads the path.
+        try:
+            addon_name(path)
+        except InstallError as exc:
+            return error_result(exc.code, exc.message, exc.hint)
+        # [2026-11-11 T-010] Check before any write. force overrides a fail verdict only;
+        # a check that could not run (no index, bad path) still blocks the install.
+        checked = self.check_result({"path": path, "flavor": flavor})
+        if checked.get("ok") is not True:
+            return checked
+        verdict = str(checked.get("verdict"))
+        if verdict != "pass" and not force:
+            errors = checked.get("error_count")
+            return error_result(
+                "check-failed",
+                f"wow_check verdict {verdict} ({errors} errors); install refused.",
+                "Fix the findings, or pass force to install anyway. Nothing was written.",
+            )
+        try:
+            folder = flavor_folder(flavor if isinstance(flavor, str) else None)
+            roots = self._default_roots if self._default_roots is not None else DEFAULT_ROOTS
+            addons_dir = locate_addons_dir(self._fs, roots, folder)
+            data_dir = self._data_dir if self._data_dir is not None else default_data_dir()
+            installed = install_addon(
+                self._fs,
+                RealInstallWriter(),
+                source=path.strip(),
+                addons_dir=addons_dir,
+                data_dir=os.fspath(data_dir),
+                clock=self._clock,
+                mode=mode,
+                dry_run=dry_run,
+            )
+        except InstallError as exc:
+            return error_result(exc.code, exc.message, exc.hint)
+        except OSError as exc:
+            return error_result(
+                "install-failed",
+                f"Install could not be written: {exc}",
+                "Check that the AddOns folder and the plugin data directory are writable.",
+            )
+        except Exception as exc:
+            return error_result(
+                "internal-error",
+                f"{type(exc).__name__}: {exc}",
+                "This is a bug in wow-addon-forge; please report it with this message.",
+            )
+        return {
+            "ok": True,
+            "flavor": folder,
+            "forced": bool(force and verdict != "pass"),
+            "check_verdict": verdict,
+            **installed,
+        }
+
+    def handle_install(self, args: object = None, **_kwargs: Any) -> str:
+        """Handle a ``wow_install`` tool call and return its result as JSON text."""
+        return to_json(self.install_result(args))
+
 
 def wow_tools_available() -> bool:
     """Report whether the wow tools can run at all.
@@ -859,6 +1145,20 @@ def register_tools(ctx: Any, *, tools: ForgeTools | None = None) -> list[str]:
             active.handle_errors,
             "Read captured in-game Lua errors and ForgeProbe capability results.",
             "🩺",
+        ),
+        (
+            "wow_savedvars",
+            WOW_SAVEDVARS_SCHEMA,
+            active.handle_savedvars,
+            "Read an addon's SavedVariables as JSON.",
+            "📦",
+        ),
+        (
+            "wow_install",
+            WOW_INSTALL_SCHEMA,
+            active.handle_install,
+            "Install an addon into Interface/AddOns after it passes wow_check.",
+            "📥",
         ),
     )
     registered: list[str] = []

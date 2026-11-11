@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — wow_install reload versus restart, and absolute source paths  [decision]
+- Task: T-010 (`docs/SPEC-PLUGIN.md` §3)
+- What: Two contracts pinned. (1) `wow_install` reports `restart` when the destination folder is new, when either TOC is missing, or when the incoming TOC lists a file the installed TOC did not; otherwise `reload`. (2) An absolute source path is allowed. What is refused is a `..` segment and an addon basename that is not `^[A-Za-z0-9_!-]+$` (a colon counts as an absolute name). The destination is always `<AddOns>/<basename>`. `force` overrides a `fail` verdict only; a check that could not run still blocks the write. Backups go to `$HERMES_HOME/cache/wow-addon-forge/backups`.
+- Why: SPEC-PLUGIN §3 says the tool reports whether a `/reload` or a client restart is needed, and AGENTS.md's foot-gun says a new file needs a restart while a file the TOC already lists is re-read on `/reload`. The accept line "refuses `../` and absolute names" does not forbid an absolute source path; forbidding that would make a normal addon folder un-installable.
+- Where: `src/wow_addon_forge/install.py` (`client_action`, `addon_name`), `src/wow_addon_forge/tools.py` (`install_result`).
+- Plan: SPEC-PLUGIN §3 named the report and the name regex without the reload/restart cases → pinned here. TASKS.md T-010 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — ForgeProbe ring contract and SavedVariables parse safety  [decision]
 - Task: T-009 (`docs/SPEC-PLUGIN.md` §3, §8)
 - What: Three contracts pinned. (1) `wow_errors` returns `{ok, flavor, errors[{message, stack, addon, count, time}], error_count, total_captured, probe}` and never includes a raw account folder name in an error message. (2) SavedVariables Lua runs in an empty Lua 5.1 function environment (`setfenv`); a function call fails as `bad-savedvars` instead of executing. Dotted paths are 0-based JSON indices. `parse_savedvars_lua`, `select_dotted_path`, `read_savedvars` and `locate_savedvars_file` are the one parser T-010 will reuse; `wow_savedvars` itself is not registered in this task. (3) ForgeProbe's slash is `/forge` (`probe`, empty/`status`, `clear`); the error ring holds 200 entries, deduped by `(addon, message)` with `count` incremented; the error hook is installed at file load, before `PLAYER_LOGIN`.

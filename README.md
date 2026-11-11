@@ -14,19 +14,20 @@ Two things in one repository:
 
 For WoW players and guild officers who are not programmers.
 
-Status (2026-11-11, T-009): Hermes loads the plugin and five tools work: `wow_env`
+Status (2026-11-11, T-010): Hermes loads the plugin and seven tools work: `wow_env`
 (install and addon detection), `wow_api` (cached WoW: Forever 1.60.1 API index),
 `wow_check` (six-stage static and headless addon verification), `wow_test`
-(isolated multi-client headless Lua 5.1 test runner), and `wow_errors` (reads
-ForgeProbe's SavedVariables: a 200-entry Lua error ring and the latest capability
-probe). `addons/ForgeProbe` ships with the plugin and passes `wow_check`; it has not
-been run in the live client (`docs/INGAME-CHECKLIST.md` section A is still `NOT RUN`).
-Secret-value simulation in the headless runtime arrives in T-034; until it lands,
-`issecretvalue` returns `false` in the stub and the static `restricted-api` rule in
-`wow_check` is the only defence against unguarded secret returns. Guildhall is one
-skeleton file that passes `wow_check`; it has not been loaded in the live game client.
-Everything else below is planned, and nothing is claimed to work until its task is
-closed in `TASKS.md`.
+(isolated multi-client headless Lua 5.1 test runner), `wow_errors` (reads
+ForgeProbe's SavedVariables), `wow_savedvars` (reads any addon's SavedVariables as
+JSON), and `wow_install` (copies or links an addon into `Interface/AddOns` after
+`wow_check` passes, backing up a replaced folder outside the game). `addons/ForgeProbe`
+ships with the plugin and passes `wow_check`; it has not been run in the live client
+(`docs/INGAME-CHECKLIST.md` section A is still `NOT RUN`). Secret-value simulation in
+the headless runtime arrives in T-034; until it lands, `issecretvalue` returns `false`
+in the stub and the static `restricted-api` rule in `wow_check` is the only defence
+against unguarded secret returns. Guildhall is one skeleton file that passes
+`wow_check`; it has not been loaded in the live game client. Everything else below is
+planned, and nothing is claimed to work until its task is closed in `TASKS.md`.
 
 ## Why a plugin and not a prompt
 
@@ -90,9 +91,12 @@ files under `Interface/AddOns`, and counts folders under `WTF/Account` without r
 account names), `wow_api` (fetches the public GitHub documentation mirrors on `sync`
 and writes only the API index cache under `~/.hermes/cache/wow-addon-forge/api-index`),
 `wow_check` / `wow_test` (read the target addon folder and the cached API index and
-write nothing), and `wow_errors` (reads `WTF/Account/**/SavedVariables/ForgeProbe.lua`
-only, writes nothing, and never prints an account folder name). `wow_errors` has no
-command-line twin yet.
+write nothing), `wow_errors` (reads `WTF/Account/**/SavedVariables/ForgeProbe.lua`
+only, writes nothing, and never prints an account folder name), `wow_savedvars`
+(reads one addon's SavedVariables the same way, still without printing an account
+name), and `wow_install` (writes only `<install>/<flavor>/Interface/AddOns/<name>`
+and a backup under `~/.hermes/cache/wow-addon-forge/backups`, never inside the game
+folder). `wow_errors` and `wow_savedvars` have no command-line twin yet.
 
 - Network: downloads of the public API documentation mirrors, only when you run
   an API sync.
