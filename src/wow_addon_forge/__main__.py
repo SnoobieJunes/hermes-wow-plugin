@@ -13,6 +13,7 @@ import json
 from collections.abc import Sequence
 
 from wow_addon_forge import PLUGIN_ID, __version__
+from wow_addon_forge.cli import add_status_and_check, format_status, run_check
 from wow_addon_forge.tools import WOW_API_ACTIONS, WOW_API_SOURCES, WOW_BRIDGE_ACTIONS, ForgeTools
 
 
@@ -83,6 +84,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="pull: discord prints one line per record and nothing when there is none",
     )
+    # [2026-11-11 T-013] status and check are the scriptable twins of /wow.
+    add_status_and_check(subparsers)
     return parser
 
 
@@ -150,6 +153,14 @@ def main(argv: Sequence[str] | None = None, *, tools: ForgeTools | None = None) 
             return 0
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0 if result["ok"] else 1
+    if args.verb in ("status", "check"):
+        active = tools if tools is not None else ForgeTools()
+        if args.verb == "status":
+            print(format_status(active))
+            return 0
+        text, code = run_check(active, args.path)
+        print(text)
+        return code
     parser.print_help()
     return 0
 

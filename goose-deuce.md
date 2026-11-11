@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — status reports the forever flavor  [decision]
+- Task: T-013 (`docs/SPEC-PLUGIN.md` §2)
+- What: `/wow status` and `hermes wow status` print the `_forever_` flavor when the install has one, not the first flavor in folder order. `check` exits 1 when `wow_check` verdict is `fail`. The skill, slash command, and CLI are registered only when the context has those methods, so a tool-only test double still loads.
+- Why: SPEC-PLUGIN §2 names the surfaces and not which flavor a multi-flavor install reports. Alphabetical order would show Classic Era first and hide the client this plugin builds for.
+- Where: `src/wow_addon_forge/cli.py`.
+- Plan: SPEC-PLUGIN §2 left the status lines unspecified → pinned here. TASKS.md T-013 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — wow_new name, module order, and bundled tests  [decision]
 - Task: T-011 (`docs/SPEC-PLUGIN.md` §3, §8)
 - What: `wow_new` requires a Lua identifier, not the wider install name regex, because the name becomes the `Sample = ns` global and `SampleDB`. Modules are written in order core, log, sync, trust, window, bridge, and a requested module pulls in the blocks it calls. `core` is always included. The bundled checks live in `Tests/scaffold.lua`, which is not listed in the TOC.

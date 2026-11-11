@@ -52,6 +52,8 @@ def register_plugin(ctx: Any) -> dict[str, Any]:
         raise TypeError("register_plugin(ctx) needs a Hermes PluginContext, got None")
     # [2026-11-11 T-003] Imported here, not at module top: tools.py imports this package for
     # TOOLSET, so a top-level import would be a cycle, and the plugin root stays import-light.
+    from wow_addon_forge.cli import register_surfaces
     from wow_addon_forge.tools import register_tools
 
+    register_surfaces(ctx)
     return {"plugin": PLUGIN_ID, "version": __version__, "tools": register_tools(ctx)}

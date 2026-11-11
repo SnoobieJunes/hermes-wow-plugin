@@ -4,6 +4,7 @@
 #   2. provides_tools MUST match the ctx.register_tool calls 1:1.
 #      [2026-11-11 T-008] tests/test_smoke.py compares this list with
 #      wow_addon_forge.PROVIDES_TOOLS and with what register(ctx) actually registers.
+# skills/wow-addon-builder, /wow, and `hermes wow` are registered by register(ctx).
 manifest_version: 2
 name: wow-addon-forge
 version: 0.1.0

@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-013 — Added the `wow-addon-builder` skill, `/wow status`, and `hermes wow status` / `check`: status prints the install, build, and index; `check` exits non-zero when the addon fails
 2026-11-11 — T-011 — Added `wow_new`: scaffolds an addon from the building blocks into an empty folder, and refuses a folder that already has files
 2026-11-11 — T-019 — Added the `window` and `bridge` building blocks: a Classic window built on first open, and an outbox/inbox client that `wow_bridge` can pull and push (no user-visible change until an addon is scaffolded from them)
 2026-11-11 — T-018 — Added the `trust` building block: roster rank decides which records are ignored, rejected, stored unverified, or allowed into derived state (no user-visible change until an addon is scaffolded from it)
