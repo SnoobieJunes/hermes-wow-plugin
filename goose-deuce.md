@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — secret comparison follows Lua 5.1  [decision]
+
+- **Plan / spec said:** Comparison on a secret value raises a `secret-value` finding.
+- **Actually did:** Arithmetic and concatenation raise `secret-value: …` from the value's metamethods. Relational comparison of a secret with a number is Lua 5.1's `attempt to compare table with number`, because `__lt` runs only when both operands share that metamethod. A restricted check classifies that message as `secret-value`. Cross-type `==` stays false and does not raise.
+- **Why:** Lupa's Lua 5.1 will not call `__lt` across types. Forcing it would mean a different VM.
+- **Commit(s):** this commit
+- **Consequence:** `secret < 1` is a `secret-value` finding under a restriction. `secret == 1` is false.
+
 ## 2026-11-11 — errors route for the pane section  [decision]
 
 - **Plan / spec said:** SPEC-PLUGIN §10 names the In-game errors section and lists buttons for status, addons, check, install, and bridge pull. It does not name an errors route.

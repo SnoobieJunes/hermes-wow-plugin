@@ -340,7 +340,11 @@ def _accesses_name(handler: Proto, wanted: str) -> bool:
 
 
 def check_addon(
-    addon_dir: str | os.PathLike[str], *, index: ApiIndex, fs: FileSystem | None = None
+    addon_dir: str | os.PathLike[str],
+    *,
+    index: ApiIndex,
+    fs: FileSystem | None = None,
+    restriction: str | None = None,
 ) -> dict[str, Any]:
     """Run the six-stage ``wow_check`` verification pipeline over one addon folder.
 
@@ -354,6 +358,8 @@ def check_addon(
         addon_dir: Path of the addon folder, as ``fs`` understands it.
         index: The API index for the client build being checked against.
         fs: Filesystem seam; ``RealFileSystem`` when ``None``.
+        restriction: Optional regime name. When set, the headless load runs with
+            that regime active so documented secret returns are opaque.
 
     Returns:
         A dict with ``addon``, ``path``, ``flavor``, ``build``, ``verdict`` (``"pass"``
@@ -576,6 +582,10 @@ def check_addon(
     try:
         world = World(index, fs=active_fs)
         headless_client = world.client("Player", rank=0)
+        if restriction:
+            # [2026-11-11 T-034] Default checks stay unrestricted. A caller that
+            # names a regime sees secret returns as opaque values.
+            headless_client.set_restriction(restriction, True)
         headless_client.load_addon(addon_path, login=True)
         for command in headless_client.registered_slash_commands():
             headless_client.slash(command)
@@ -617,15 +627,27 @@ def check_addon(
             full_msg = (
                 f"{err.message}\nStack:\n{err.stack.strip()}" if err.stack.strip() else err.message
             )
+            secretish = "secret-value" in err.message or (
+                restriction is not None
+                and "attempt to compare" in err.message
+                and "table" in err.message
+            )
+            finding_code = "secret-value" if secretish else "headless-error"
+            hint = (
+                "Do not use a secret value in arithmetic, comparison or concatenation. "
+                "Test it with issecretvalue, or pass it to a widget setter."
+                if finding_code == "secret-value"
+                else "Fix the runtime Lua error raised during load, login, slash "
+                "invocation, or reload."
+            )
             findings.append(
                 Finding(
                     "error",
-                    "headless-error",
+                    finding_code,
                     err_file,
                     err_line,
                     full_msg,
-                    "Fix the runtime Lua error raised during load, login, slash "
-                    "invocation, or reload.",
+                    hint,
                 )
             )
 

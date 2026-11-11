@@ -81,10 +81,6 @@
       Why: A guild picks its look together (SPEC-GUILDHALL §8.13).
       Accept: Headless: a member proposes a design; each member holds one live vote that a later vote replaces; the tally is identical on five clients. `wow_check` verdict `pass`. Full gate green.
       Touches: `addons/Guildhall/Modules/Tabard.lua`, `addons/Guildhall/UI/TabTabard.lua`, `addons/Guildhall/Guildhall.toc`, `addons/Guildhall/Tests/`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-019   Gated: none
-- [ ] T-034 — Secret-value simulation in the headless runtime
-      Why: Code that works out of combat and errors in combat is the failure the static rule cannot fully see (SPEC-PLUGIN §6).
-      Accept: With a restriction regime active, documented secret-returning functions return an opaque value; arithmetic, comparison or concatenation on it raises a `secret-value` finding with file and line; passing it to a widget setter does not; Guildhall and ForgeProbe stay at verdict `pass`. Full gate green.
-      Touches: `src/wow_addon_forge/headless/`, `src/wow_addon_forge/check.py`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-008   Gated: none
 - [ ] T-044 — Support local `BlizzardInterfaceCode` client exports in `wow_api sync`
       Why: SPEC-PLUGIN §5 lists `<flavor>/BlizzardInterfaceCode` (produced by `ExportInterfaceFiles code`) ahead of the public mirrors when present on disk; deferred from T-005 until an export folder layout is verified.
       Accept: Unit tests against a fake install holding `<flavor>/BlizzardInterfaceCode` prove `wow_api` with `source="export"` and `source="auto"` indexes the local export with zero network calls, and falls back to the mirror under `auto` (saying so in `note`) when no export folder is present. Full gate green.
@@ -103,6 +99,10 @@
 ## Dropped
 
 ## Done
+- [x] T-034 — Secret-value simulation in the headless runtime (2026-11-11, this commit)
+      Why: Code that works out of combat and errors in combat is the failure the static rule cannot fully see (SPEC-PLUGIN §6).
+      Accept: With a restriction regime active, documented secret-returning functions return an opaque value; arithmetic, comparison or concatenation on it raises a `secret-value` finding with file and line; passing it to a widget setter does not; Guildhall and ForgeProbe stay at verdict `pass`. Full gate green.
+      Touches: `src/wow_addon_forge/headless/`, `src/wow_addon_forge/check.py`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-008   Gated: none
 - [x] T-024 — Desktop pane `Addon Forge` and its backend (2026-11-11, this commit)
       Why: Non-technical users get buttons instead of tool names; judges score polish (SPEC-PLUGIN §10).
       Accept: `desktop/plugin.js` and `dashboard/plugin_api.py` exist; the validator's `desktop surface` check passes; backend route tests against a fake install return status, the addon list and a check result; the pane imports nothing but `@hermes/plugin-sdk`, `react` and `react/jsx-runtime` and contains no JSX. Full gate green.

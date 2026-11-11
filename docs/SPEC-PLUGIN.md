@@ -161,9 +161,12 @@ A strict stand-in for the game inside `lupa.lua51`:
   `client.fire(event, …)`, `client.slash(text)`, `client.eval(lua)`,
   `world.advance(seconds)`, `client.reload()`.
 
-Secret-value simulation (opaque values that error on arithmetic, comparison and
-concatenation while a restriction is active) is task T-034; until it lands the
-`restricted-api` rule is the only defence and the README says so.
+Secret-value simulation is in: while a restriction is active, a documented secret
+return is an opaque value. Arithmetic and concatenation on it raise a
+`secret-value` finding. Relational comparison with a number is Lua 5.1's
+`attempt to compare table with number`, classified as the same finding when the
+check runs under a restriction (goose-deuce.md 2026-11-11). A widget setter may
+hold the value. `issecretvalue` is true for it.
 
 ## 7. Bridge contract
 

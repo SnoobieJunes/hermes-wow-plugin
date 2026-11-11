@@ -27,9 +27,10 @@ is the namespace, dispatcher, clock, store, safe codec and slash command a scaff
 addon stands on, plus the `log` block (record set and order-independent reducers), the `sync` block (chunked, throttled guild exchange), and the `trust` block (roster rank gates which records count), the `window` block (one lazy Classic window), and the `bridge` block (outbox and inbox for `wow_bridge`). `addons/ForgeProbe`
 ships with the plugin and passes `wow_check`; it has not been run in the live client
 (`docs/INGAME-CHECKLIST.md` section A is still `NOT RUN`). Secret-value simulation in
-the headless runtime arrives in T-034; until it lands, `issecretvalue` returns `false`
-in the stub and the static `restricted-api` rule in `wow_check` is the only defence
-against unguarded secret returns. Guildhall is one skeleton file that passes
+the headless runtime is in. A documented secret return is opaque while a restriction
+is active; arithmetic and concatenation on it are `secret-value` findings, and a
+widget setter may hold the value. `issecretvalue` is true for that value. The static
+`restricted-api` rule still flags an unguarded secret-returning call. Guildhall is one skeleton file that passes
 `wow_check`; it has not been loaded in the live game client. Everything else below is
 planned, and nothing is claimed to work until its task is closed in `TASKS.md`.
 

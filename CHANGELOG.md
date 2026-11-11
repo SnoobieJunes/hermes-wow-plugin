@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-034 — Secret returns are opaque while a restriction is active; arithmetic, comparison and concatenation on them are findings, and a widget setter may hold the value
 2026-11-11 — T-024 — Added the Addon Forge desktop pane and its backend: status, addon list, check, install, and bridge pull, with long calls off the request thread
 2026-11-11 — T-014 — Catalog baseline: MIT `LICENSE`, `SECURITY.md`, a disclosure section, and CI that runs the full gate on macOS and Linux
 2026-11-11 — T-039 — Declared `wow_root`, `flavor`, and `api_source`. `wow_env` with no `root` searches only `wow_root` when that setting is set, and the two default folders when it is not

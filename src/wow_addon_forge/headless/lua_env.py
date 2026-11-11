@@ -271,7 +271,11 @@ return function(bridge)
     rawset(_G, "CreateFromMixins", function(...)
         return wow_mixin({}, ...)
     end)
-    rawset(_G, "issecretvalue", function(_) return false end)
+    rawset(_G, "issecretvalue", function(value)
+        -- [2026-11-11 T-034] A secret is a table marked at creation. rawget avoids
+        -- any metamethod, so the test itself cannot raise the secret-value error.
+        return type(value) == "table" and rawget(value, "__forge_secret") == true
+    end)
     rawset(_G, "GetTime", function() return bridge_time() end)
     rawset(_G, "GetServerTime", function() return bridge_server_time() end)
 
@@ -951,6 +955,29 @@ return function(bridge)
             return false
         end
         return call_protected(compiled, addon_name, ns_table)
+    end
+
+    function controller.make_secret()
+        -- [2026-11-11 T-034] Opaque while a restriction is active. Arithmetic,
+        -- relational comparison and concatenation error. A widget setter may
+        -- hold the value: tostring of a table does not call those metamethods.
+        -- Cross-type == stays Lua 5.1's false, pinned in goose-deuce.md.
+        local function reject(kind)
+            error("secret-value: " .. kind, 2)
+        end
+        local secret = { __forge_secret = true }
+        return setmetatable(secret, {
+            __add = function() reject("arithmetic") end,
+            __sub = function() reject("arithmetic") end,
+            __mul = function() reject("arithmetic") end,
+            __div = function() reject("arithmetic") end,
+            __mod = function() reject("arithmetic") end,
+            __pow = function() reject("arithmetic") end,
+            __unm = function() reject("arithmetic") end,
+            __concat = function() reject("concatenation") end,
+            __lt = function() reject("comparison") end,
+            __le = function() reject("comparison") end,
+        })
     end
 
     return controller

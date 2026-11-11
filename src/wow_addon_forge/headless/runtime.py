@@ -1275,6 +1275,16 @@ class SimulatedClient:
         )
 
         def stub(*_args: Any) -> Any:
+            # [2026-11-11 T-034] A documented secret return is opaque only while
+            # a restriction regime is active. Unrestricted calls keep the typed default.
+            secret = entry.get("secret")
+            if (
+                isinstance(secret, Mapping)
+                and secret.get("returns") is True
+                and self._active_restrictions
+                and self._controller is not None
+            ):
+                return self._controller.make_secret()
             # [2026-11-11 T-007] Defaults are built per call, not once, so a
             # table default is a fresh Lua table each time; addon code that
             # writes into a returned table must not poison the next caller.
