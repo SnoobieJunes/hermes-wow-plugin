@@ -1,0 +1,11 @@
+## Interface: 16001
+## Title: @@ADDON@@
+## Notes: Core building block instantiated for @@ADDON@@.
+## SavedVariables: @@ADDON@@DB
+
+Core/Namespace.lua
+Core/Dispatch.lua
+Core/Clock.lua
+Core/Codec.lua
+Core/Store.lua
+Core/Slash.lua

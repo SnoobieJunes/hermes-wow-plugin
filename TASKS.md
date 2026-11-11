@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-015 — Building block `core`: namespace, dispatcher, clock, store, codec, slash
-      Why: Every addon the plugin scaffolds stands on these, Guildhall first (SPEC-PLUGIN §8, SPEC-GUILDHALL §3).
-      Accept: The block is Lua templates with an addon-name token under `src/wow_addon_forge/blocks/core/`. Lua tests run by pytest prove: the codec round-trips 500 random nested tables (strings with every byte 1–255, integers, floats, booleans), its output never contains byte 0, and 200 mutated inputs are rejected by returning nil plus a message, never by raising; the store migrates a version-1 fixture; the slash command registers under the instantiated addon's name. An addon instantiated from the block gets `wow_check` verdict `pass`. Full gate green.
-      Touches: `src/wow_addon_forge/blocks/core/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-008   Gated: none
 - [ ] T-016 — Building block `log`: the replicated record log and reducers
       Why: One replicated log is the whole data model; convergence depends on it being order-independent (SPEC-GUILDHALL §4).
       Accept: Lua tests prove: applying the same 300 generated records in 50 shuffled orders yields one state hash; a duplicate record is a no-op; an unknown kind is stored but not reduced; a checkpoint followed by compaction leaves derived balances unchanged. An addon instantiated from `core` + `log` gets `wow_check` verdict `pass`. Full gate green.
@@ -143,6 +139,10 @@
 ## Dropped
 
 ## Done
+- [x] T-015 — Building block `core`: namespace, dispatcher, clock, store, codec, slash (2026-11-11, this commit)
+      Why: Every addon the plugin scaffolds stands on these, Guildhall first (SPEC-PLUGIN §8, SPEC-GUILDHALL §3).
+      Accept: The block is Lua templates with an addon-name token under `src/wow_addon_forge/blocks/core/`. Lua tests run by pytest prove: the codec round-trips 500 random nested tables (strings with every byte 1–255, integers, floats, booleans), its output never contains byte 0, and 200 mutated inputs are rejected by returning nil plus a message, never by raising; the store migrates a version-1 fixture; the slash command registers under the instantiated addon's name. An addon instantiated from the block gets `wow_check` verdict `pass`. Full gate green.
+      Touches: `src/wow_addon_forge/blocks/core/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-008   Gated: none
 - [x] T-012 — `wow_bridge` and the bridge contract (2026-11-11, this commit)
       Why: The Discord link is two files; the contract makes any addon able to use it (SPEC-PLUGIN §7).
       Accept: With a SavedVariables fixture and a temporary addon folder: `pull` returns only records past the cursor and advances it; a second `pull` returns none; `push` writes an `Inbox.lua` that compiles in the Lua 5.1 VM and keeps earlier unconsumed items; `push` to an addon without `## X-Forge-Bridge: 1` is refused; `uv run python -m wow_addon_forge bridge pull --format discord` prints one line per record and nothing when there is none. Full gate green.

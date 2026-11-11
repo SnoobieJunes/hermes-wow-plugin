@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-015 — Added the `core` building block: namespace, dispatcher, clock, versioned SavedVariables store, a safe codec that does not execute received text, and a slash command registered under the addon's name
 2026-11-11 — T-012 — Added `wow_bridge` and `python -m wow_addon_forge bridge pull --format discord`: pull returns outbox records past a cursor and advances it; push writes `Inbox.lua` (Lua 5.1, keeping unconsumed items) only when the TOC declares `## X-Forge-Bridge: 1`
 2026-11-11 — T-010 — Added `wow_savedvars` (SavedVariables as JSON, including one dotted path) and `wow_install` (copy or link into `Interface/AddOns` after `wow_check`, with a backup outside the game folder, and a `/reload` versus client-restart report). `dry_run` writes nothing
 2026-11-11 — T-009 — Shipped `addons/ForgeProbe` (capability probe on login and `/forge probe`, 200-entry Lua error ring) and the read-only `wow_errors` tool, which turns ForgeProbe's SavedVariables into JSON (`errors[]` and `probe{}`). Not yet run in the live client

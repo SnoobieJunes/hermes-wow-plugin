@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — Core block token and codec text form  [decision]
+- Task: T-015 (`docs/SPEC-PLUGIN.md` §8)
+- What: The addon-name token in `src/wow_addon_forge/blocks/core/` is the literal `@@ADDON@@`. The codec is a tagged text form (booleans, integers, IEEE-754 hex floats, hex strings, tables). Decode parses that text and does not execute it. Numeric table keys are encoded with a `#` prefix so they survive as numbers.
+- Why: SPEC-PLUGIN §8 requires a token and a codec that does not run received text, and does not name the token or the wire form. Later blocks and `wow_new` have to use the same token or instantiation splits.
+- Where: `src/wow_addon_forge/blocks/core/`.
+- Plan: SPEC-PLUGIN §8 left the token spelling and the codec form unspecified → pinned here. TASKS.md T-015 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — Bridge cursor, inbox_seen, and Discord lines  [decision]
 - Task: T-012 (`docs/SPEC-PLUGIN.md` §7)
 - What: Three contracts pinned. (1) The pull cursor is `{"cursor": N}` in `$HERMES_HOME/cache/wow-addon-forge/bridge-cursors/<addon>.json`, not in the game folder. Pull returns outbox records with `id` strictly greater than that cursor, then stores the max id returned. (2) `push` keeps existing `Inbox.lua` items unless their id is listed in SavedVariables `inbox_seen`. A missing `inbox_seen` keeps every existing item, and the result says so. (3) `bridge pull --format discord` prints `[kind] text` one line per record and prints nothing when there are none. An omitted addon name uses the single installed addon whose TOC declares `## X-Forge-Bridge: 1`.
