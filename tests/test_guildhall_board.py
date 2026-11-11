@@ -92,3 +92,14 @@ def test_board_post_box_posts_and_tab_refreshes_on_show() -> None:
     world.advance(10)
     assert bob.run_lua("return #Guildhall.Board.rows()") == 2
     assert ann.errors == [] and bob.errors == []
+
+
+def test_role_matches_short_name_form() -> None:
+    # [2026-11-11 T-054] Live regression: Forever's roster/senders use the
+    # bare name ("Friar Baggins") while records author Name-Realm; the exact
+    # match refused a rank-1 officer as not-allowed. Short form must match.
+    _world, ann, bob = _pair(54054)
+    assert ann.run_lua('return Guildhall.Trust.role("Ann")') == "officer"
+    assert ann.run_lua('return Guildhall.Trust.role("Bob")') == "member"
+    assert ann.run_lua(f'return Guildhall.Trust.role("{ann.full_name}")') == "officer"
+    assert ann.errors == [] and bob.errors == []

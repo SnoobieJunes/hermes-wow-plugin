@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-054 — Reconcile live sender identity format with Trust/Sync name keys
-      Why: Live T-035 evidence: the guild echo sender arrived as `Friar Baggins` (space, no `-Realm` suffix), while records author `Name-Realm` from UnitName+GetRealmName and Trust resolves roles by name — a mismatch would silently un-verify real guild traffic.
-      Accept: Headless: a client whose wire sender lacks the realm suffix (or contains a space) still has its officer records applied and its claims attested exactly as the Name-Realm form does today; the normalisation is in one seam and named. Full gate green.
-      Touches: `src/wow_addon_forge/blocks/trust/`, `src/wow_addon_forge/blocks/sync/`, `addons/Guildhall/Core/`, `tests/`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-018, T-035   Gated: none
 - [ ] T-036 — In-game acceptance of Guildhall
       Why: Headless passes are not in-game passes (LOOP.md rule 9).
       Accept: INGAME-CHECKLIST lines 6–12 carry results from the live client; every FAIL has a task.
@@ -83,6 +79,10 @@
 ## Dropped
 
 ## Done
+- [x] T-054 — Reconcile live sender identity format with Trust/Sync name keys (2026-11-11, this commit)
+      Why: Live T-035 evidence: the guild echo sender arrived as `Friar Baggins` (space, no `-Realm` suffix), while records author `Name-Realm` from UnitName+GetRealmName and Trust resolves roles by name — a mismatch would silently un-verify real guild traffic.
+      Accept: Headless: a client whose wire sender lacks the realm suffix (or contains a space) still has its officer records applied and its claims attested exactly as the Name-Realm form does today; the normalisation is in one seam and named. Full gate green.
+      Touches: `src/wow_addon_forge/blocks/trust/Core/Trust.lua`, `addons/Guildhall/Core/Trust.lua`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-018, T-035   Gated: none
 - [x] T-058 — ForgeProbe: skip registering the known-blocked combat-log event (2026-11-11, this commit)
       Why: Live retest after T-052: exactly one ADDON_ACTION_FORBIDDEN per probe run, and the probe now truthfully names it — COMBAT_LOG_EVENT_UNFILTERED (valid=true, registered=false; the other 10 register fine). Attempting it is the only remaining modal source.
       Accept: Headless: `/forge probe` records COMBAT_LOG_EVENT_UNFILTERED registered=false without a RegisterEvent attempt (scratch frame not registered for it); all other probe behavior unchanged. Full gate green. Live retest (zero forbidden entries from a probe run) under T-036.

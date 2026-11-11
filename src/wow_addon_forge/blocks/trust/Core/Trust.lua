@@ -35,6 +35,17 @@ local function meets(role, minimum)
     return ROLE_RANK[role] <= ROLE_RANK[minimum]
 end
 
+-- [2026-11-11 T-054] The short form of a Name-Realm identity: everything
+-- before the first dash (character names never contain one, realms are what
+-- follows it). Live Forever returns bare names from the roster, UnitName and
+-- CHAT_MSG_ADDON senders while record authors are built Name-Realm — seen
+-- live 2026-11-11: "Friar Baggins" vs "Friar Baggins-<realm>", rank 1, still
+-- refused as not-allowed. role() is the one seam every permission check
+-- funnels through, so it matches exact first, then short-form.
+local function short_name(name)
+    return (tostring(name):match("^[^%-]+")) or tostring(name)
+end
+
 function ns.Trust.role(name)
     if type(name) ~= "string" or name == "" then
         return nil
@@ -46,9 +57,17 @@ function ns.Trust.role(name)
     if type(total) ~= "number" then
         return nil
     end
+    local wanted = short_name(name)
     for index = 1, total do
         local roster_name, _, rank = GetGuildRosterInfo(index)
-        if roster_name == name and type(rank) == "number" then
+        -- [2026-11-11 T-054] Exact match wins; short-form equality is the
+        -- fallback for clients that disagree about the realm suffix. Two
+        -- guildmates sharing a short name on different realms would take
+        -- the first roster hit — indistinguishable in the game's own guild
+        -- UI too, and ranks are guild-scoped, so the risk is cosmetic.
+        local same = roster_name == name
+            or (type(roster_name) == "string" and short_name(roster_name) == wanted)
+        if same and type(rank) == "number" then
             if rank == 0 then
                 return "gm"
             end
