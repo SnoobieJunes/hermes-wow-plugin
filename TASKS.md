@@ -3,6 +3,14 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
+- [ ] T-053 — Window block: a visible tab rail and per-tab containers
+      Why: Live T-036 evidence: `/gh` opens the window but there are no tab buttons and no tab is ever shown, so Board/Calendar/Marks are unreachable in game (headless tests call show_tab directly and cannot see this).
+      Accept: Headless: opening the window builds one button per registered tab and shows the first tab; clicking a button (its OnClick) shows that tab's container and hides the others; registering after build still gets a button. Block and scaffolded copy identical modulo the name token. `wow_check` verdict `pass`. Full gate green. Live retest recorded under T-036.
+      Touches: `src/wow_addon_forge/blocks/window/UI/Window.lua`, `addons/Guildhall/UI/Window.lua`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-019   Gated: none
+- [ ] T-054 — Reconcile live sender identity format with Trust/Sync name keys
+      Why: Live T-035 evidence: the guild echo sender arrived as `Friar Baggins` (space, no `-Realm` suffix), while records author `Name-Realm` from UnitName+GetRealmName and Trust resolves roles by name — a mismatch would silently un-verify real guild traffic.
+      Accept: Headless: a client whose wire sender lacks the realm suffix (or contains a space) still has its officer records applied and its claims attested exactly as the Name-Realm form does today; the normalisation is in one seam and named. Full gate green.
+      Touches: `src/wow_addon_forge/blocks/trust/`, `src/wow_addon_forge/blocks/sync/`, `addons/Guildhall/Core/`, `tests/`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-018, T-035   Gated: none
 - [ ] T-035 — Run the in-game probe
       Why: Only the live client says which events fire and whether guild addon messages echo (INGAME-CHECKLIST section A).
       Accept: The owner installs ForgeProbe, logs in on a guilded character, runs `/forge probe`, reloads; `wow_errors` output is pasted into the task; INGAME-CHECKLIST lines 1–5 carry results; any detection the probe shows unusable gets a task.
@@ -83,6 +91,10 @@
 ## Dropped
 
 ## Done
+- [x] T-052 — ForgeProbe: no login auto-probe, truthful registration records (2026-11-11, this commit)
+      Why: Live T-035 evidence: the login auto-probe's protected RegisterEvent attempts (4 of 11 events in client 1.60.1) raise ADDON_ACTION_FORBIDDEN and a Blizzard-UI modal on every login, and the old pcall recorded registered=true for blocked calls.
+      Accept: Headless regression: no probe table exists after load/login until `/forge probe`; after the slash the probe table exists with `registered` from IsEventRegistered; existing probe tests stay green. `wow_check` on ForgeProbe verdict `pass`. Full gate green. Live retest (no modal at login) recorded under T-036.
+      Touches: `addons/ForgeProbe/Core.lua`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-009   Gated: none
 - [x] T-051 — Repository hygiene mirrored from Eldr (2026-11-11, this commit)
       Why: The repo publishes today (T-037); Eldr's public-repo setup is the owner's proven model, adapted where its AGPL/CLA apparatus does not fit an MIT plugin.
       Accept: `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/` (bug, feature, config with security link) and `.github/FUNDING.yml` exist and name this repo's tools and rules; `.gitleaks.toml` exists, a local `gitleaks detect` over full history runs clean (findings allowlisted with reasons or none), and CI gains Eldr's hardened gitleaks job (pinned image, commits-scanned assertion); license statements agree across `LICENSE`, `plugin.yaml`, `pyproject.toml` and `README.md`. Full gate green.

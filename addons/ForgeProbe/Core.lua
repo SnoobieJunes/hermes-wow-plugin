@@ -202,11 +202,20 @@ function ns:RunProbe(announce)
         local valid = validOk and isValid == true
         local registered = false
         if valid then
-            local regOk = pcall(probeScratchFrame.RegisterEvent, probeScratchFrame, evName)
-            if regOk then
-                registered = true
-                pcall(probeScratchFrame.UnregisterEvent, probeScratchFrame, evName)
-            end
+            -- [2026-11-11 T-052] Live-client evidence (T-035): 4 of the 11
+            -- probed events are protected in client 1.60.1 — registering them
+            -- from addon code raises ADDON_ACTION_FORBIDDEN and a modal, yet
+            -- the pcall still reports success, so the old loop recorded
+            -- registered=true for calls the client had blocked. Two changes:
+            -- the scratch frame is never unregistered (the pair doubled the
+            -- protected calls), and `registered` is now the client's own
+            -- IsEventRegistered answer after the attempt, so a blocked
+            -- registration records false and names itself in the table.
+            pcall(probeScratchFrame.RegisterEvent, probeScratchFrame, evName)
+            local chkOk, isRegistered = pcall(
+                probeScratchFrame.IsEventRegistered, probeScratchFrame, evName
+            )
+            registered = chkOk and isRegistered == true
         end
         eventsReport[evName] = {
             valid = valid,
@@ -283,7 +292,11 @@ end
 
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
-eventFrame:RegisterEvent("PLAYER_LOGIN")
+-- [2026-11-11 T-052] No PLAYER_LOGIN registration: the probe used to auto-run
+-- at login, and its protected RegisterEvent attempts (see RunProbe) popped a
+-- "blocked from an action only available to the Blizzard UI" modal on every
+-- login (live evidence, T-035). The probe now runs only when asked:
+-- `/forge probe`.
 eventFrame:RegisterEvent("CHAT_MSG_ADDON")
 eventFrame:RegisterEvent("ADDON_ACTION_FORBIDDEN")
 eventFrame:RegisterEvent("ADDON_ACTION_BLOCKED")
@@ -295,8 +308,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
             ensureDB()
             C_ChatInfo.RegisterAddonMessagePrefix(ECHO_PREFIX)
         end
-    elseif event == "PLAYER_LOGIN" then
-        ns:RunProbe(false)
     elseif event == "CHAT_MSG_ADDON" then
         local prefix, text, _, sender = ...
         if prefix == ECHO_PREFIX and ns.pendingEchoToken and text == ns.pendingEchoToken then

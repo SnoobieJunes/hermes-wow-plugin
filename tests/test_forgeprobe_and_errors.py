@@ -216,6 +216,18 @@ def test_forge_probe_slash_reports_build_events_apis_and_echo(
     assert echo["echo_sender"] == "Alice-Forever"
 
 
+def test_probe_does_not_auto_run_at_login(fake_fs_factory: Any) -> None:
+    # [2026-11-11 T-052] Regression for the live T-035 finding: the login
+    # auto-probe's protected RegisterEvent attempts popped a Blizzard-UI
+    # modal on every login. The probe must exist only after /forge probe.
+    _world, client = _probe_world(fake_fs_factory)
+    # ensureDB() creates an empty probe table at load; probed_at is the
+    # field only RunProbe writes, so it is the honest "did it run" signal.
+    assert client.run_lua("return ForgeProbeDB.probe.probed_at") is None
+    assert client.slash("/forge probe") is True
+    assert isinstance(client.run_lua("return ForgeProbeDB.probe.probed_at"), (int, float))
+
+
 def test_forge_probe_restricted_and_unguilded_skip_echo(fake_fs_factory: Any) -> None:
     _world, client = _probe_world(fake_fs_factory)
     client.set_restriction("Combat", True)
