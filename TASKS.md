@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-018 — Building block `trust`: roles and record acceptance
-      Why: With no signatures, rank and sender are the only defences; they must hold (SPEC-GUILDHALL §6).
-      Accept: Headless: a member-authored officer-kind record never reaches derived state; the same record relayed by an officer does; a record received from a third party is stored marked unverified and excluded from privileged effects; a self-only kind naming another character is rejected; demoting an author stops later records from applying; a non-member's messages are ignored. `wow_check` verdict `pass`. Full gate green.
-      Touches: `src/wow_addon_forge/blocks/trust/`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-017   Gated: none
 - [ ] T-019 — Building blocks `window` and `bridge`: one lazy window with the Classic theme, and the bridge client
       Why: Every scaffolded addon needs a window that costs nothing until opened and, optionally, the Discord seam (SPEC-GUILDHALL §9, SPEC-PLUGIN §7).
       Accept: Headless: the window is built on first open and not before; a tab a module registers builds only when first shown; the theme is one table and Classic uses only frame templates the API index confirms for this build; the bridge block writes an outbox that `wow_bridge pull` reads and ingests an `Inbox.lua` written by `wow_bridge push`, never applying an item twice. An addon instantiated from every block gets `wow_check` verdict `pass`. Full gate green.
@@ -131,6 +127,10 @@
 ## Dropped
 
 ## Done
+- [x] T-018 — Building block `trust`: roles and record acceptance (2026-11-11, this commit)
+      Why: With no signatures, rank and sender are the only defences; they must hold (SPEC-GUILDHALL §6).
+      Accept: Headless: a member-authored officer-kind record never reaches derived state; the same record relayed by an officer does; a record received from a third party is stored marked unverified and excluded from privileged effects; a self-only kind naming another character is rejected; demoting an author stops later records from applying; a non-member's messages are ignored. `wow_check` verdict `pass`. Full gate green.
+      Touches: `src/wow_addon_forge/blocks/trust/`, `tests/`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-017   Gated: none
 - [x] T-017 — Building block `sync`: chunker, throttle, restriction queue, protocol (2026-11-11, this commit)
       Why: Guildmates must converge without a server, inside the client's message limits (SPEC-GUILDHALL §5).
       Accept: Headless simulation on an addon instantiated from the blocks: 5 clients, 200 records authored across them, 30% loss with reordering and duplication, one client joining late — all five reach one state hash within 10 simulated minutes; no message exceeds 255 bytes; no client sustains more than 1 message per second; nothing is sent while a restriction is active and the queue flushes when it lifts. `wow_check` verdict `pass`. Full gate green.

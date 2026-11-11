@@ -29,8 +29,11 @@ end
 function ns.Reduce.fold(log)
     local balances = {}
     for _, record in ipairs(ns.Log.list(log)) do
+        local allowed = ns.Trust == nil or type(ns.Trust.applies) ~= "function" or ns.Trust.applies(record)
         local payload = record.p
-        if record.k == "marks.credit" and type(payload) == "table" then
+        if not allowed then
+            -- A trust block is loaded and this record must not affect balances.
+        elseif record.k == "marks.credit" and type(payload) == "table" then
             local who = payload.who
             local amount = payload.n
             if type(who) == "string" and type(amount) == "number" then

@@ -49,20 +49,25 @@ local function encode(kind, record)
     )
 end
 
-local function apply_encoded(text)
+local function apply_encoded(text, sender)
     local kind, author, seq, time, record_kind, who, amount =
         text:match("^([AD]),([^,]+),(%d+),(%d+),([^,]+),([^,]+),(%d+)$")
     if kind == nil then
         return
     end
-    ns.Log.apply(ns.Sync.log, {
+    local record = {
         a = author,
         s = tonumber(seq),
         t = tonumber(time),
         k = record_kind,
         p = { who = who, n = tonumber(amount) },
         v = 1,
-    })
+    }
+    if ns.Trust ~= nil and type(ns.Trust.receive) == "function" then
+        ns.Trust.receive(ns.Sync.log, record, sender)
+        return
+    end
+    ns.Log.apply(ns.Sync.log, record)
 end
 
 local function vector_text()
@@ -80,7 +85,10 @@ local function vector_text()
     return "V," .. table.concat(parts, ";")
 end
 
-local function on_message(text)
+local function on_message(text, sender)
+    if ns.Trust ~= nil and ns.Trust.role(sender) == nil then
+        return
+    end
     if text:sub(1, 2) == "H," then
         if text:sub(3) ~= ns.Sync.hash() then
             ns.Throttle.enqueue(ns.Sync.throttle, vector_text(), false)
@@ -119,7 +127,7 @@ local function on_message(text)
         return
     end
     if text:sub(1, 2) == "A," or text:sub(1, 2) == "D," then
-        apply_encoded(text)
+        apply_encoded(text, sender)
     end
 end
 
@@ -134,7 +142,7 @@ local function on_addon(prefix, text, _, sender)
     if whole == nil then
         return
     end
-    on_message(whole)
+    on_message(whole, sender)
 end
 
 local function send(text)
@@ -213,6 +221,9 @@ end
 
 ns.Sync.log = ns.Log.new()
 ns.Sync.throttle = ns.Throttle.new()
+if ns.Trust ~= nil then
+    ns.Trust.log = ns.Sync.log
+end
 
 if type(C_ChatInfo) == "table" and type(C_ChatInfo.RegisterAddonMessagePrefix) == "function" then
     pcall(C_ChatInfo.RegisterAddonMessagePrefix, PREFIX)

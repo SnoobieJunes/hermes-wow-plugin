@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — Trust kind table and reduce-time rank  [decision]
+- Task: T-018 (`docs/SPEC-GUILDHALL.md` §6)
+- What: `officerRank` defaults to 1. Starter kinds: `marks.credit`, `marks.debit`, and `log.checkpoint` need an officer; `settings.set` needs the guild master; `self.act` is member-only and may name only its author. A direct record whose author is now below that minimum does not affect balances, including one stored before the demotion. An officer relay is marked `relay` and counts while that sender is still an officer. A third-party sender stores the record with `unverified` and it does not count. `receive` returns `ignored`, `rejected`, `unverified`, or `accepted`. Sync asks Trust before applying a wire record when Trust is loaded.
+- Why: SPEC-GUILDHALL §6 names the rules and not the kind table or the mark field. Marks and settings will call these kinds; a second spelling would fork acceptance.
+- Where: `src/wow_addon_forge/blocks/trust/Core/Trust.lua`, `src/wow_addon_forge/blocks/log/Core/Reduce.lua`, `src/wow_addon_forge/blocks/sync/Core/Sync.lua`.
+- Plan: SPEC-GUILDHALL §6 left the kind table unspecified → pinned here. TASKS.md T-018 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — Sync wire prefix and message grammar  [decision]
 - Task: T-017 (`docs/SPEC-GUILDHALL.md` §5)
 - What: The sync block speaks prefix `GHSYNC` on `GUILD`. Kinds are `A`/`D` (author, seq, time, kind, who, amount), `H` (state hash), `V` (author heads), `Q` (a missing range), and `C` (a 255-byte chunk). At most one send per integer `GetTime` second. Catch-up is dropped before authored data when the queue exceeds 400. `ns.Log.get` is the lookup sync uses.
