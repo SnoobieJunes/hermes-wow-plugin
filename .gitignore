@@ -1,0 +1,38 @@
+# Python and bytecode (Hermes Catalog Rule 17 forbids committed .pyc / binaries)
+__pycache__/
+*.py[cod]
+*.so
+*.dylib
+
+# Virtual environments and tool caches
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+dist/
+build/
+*.egg-info/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Loop state, review-lane findings, generated API index cache
+.loop/
+.review/
+.forge-cache/
+
+# Generated mockup candidates (an approved one is added on purpose)
+docs/mockups/*.png
+docs/mockups/*.webp
+docs/mockups/PROGRESS.log
+docs/mockups/DONE.txt
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/
