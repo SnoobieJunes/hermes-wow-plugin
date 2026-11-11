@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-014 — Catalog-ready baseline
-      Why: From this commit on, any commit can be pinned for the hackathon entry (PLAN §5).
-      Accept: `hermes plugins validate . --install-deps` passes with 0 failures; `LICENSE` (MIT), `SECURITY.md` and a README disclosure section covering SPEC-PLUGIN §13 exist; `.github/workflows/ci.yml` runs the full gate on macOS and Linux; `plugin.yaml` `provides_tools` lists exactly the registered tools; version `0.1.0` agrees in `plugin.yaml`, `pyproject.toml` and the package; a cold clone passes the gate.
-      Touches: `LICENSE`, `SECURITY.md`, `README.md`, `.github/workflows/ci.yml`, `plugin.yaml`, `pyproject.toml`, `CHANGELOG.md`, `TASKS.md`   Depends: T-013   Gated: none
 - [ ] T-041 — The plugin-done gate: build a throwaway addon end to end through the enabled plugin
       Why: Owner rule: no addon work starts until the plugin is finished and proven by use (PLAN §5).
       Accept: Every tool in SPEC-PLUGIN §3 is registered and `hermes plugins validate . --install-deps` passes. `hermes plugins list` shows `wow-addon-forge` enabled (it is already linked to this repo). A fresh Hermes session started in a scratch directory with the `wow-addon-builder` skill builds a throwaway addon using only the plugin's tools: `wow_env` and `wow_install` against a temporary fake install, `wow_api` against the live index, `wow_new`, `wow_check` with verdict `pass`, `wow_test`, `wow_savedvars` and `wow_errors` on fixtures, and `wow_bridge` pull and push. That session's tool calls and verdicts are saved under `docs/gate/` and summarised in the commit body. Every defect found is fixed in the plugin first and the gate is re-run from a fresh session until it passes clean. Full gate green.
@@ -111,6 +107,10 @@
 ## Dropped
 
 ## Done
+- [x] T-014 — Catalog-ready baseline (2026-11-11, this commit)
+      Why: From this commit on, any commit can be pinned for the hackathon entry (PLAN §5).
+      Accept: `hermes plugins validate . --install-deps` passes with 0 failures; `LICENSE` (MIT), `SECURITY.md` and a README disclosure section covering SPEC-PLUGIN §13 exist; `.github/workflows/ci.yml` runs the full gate on macOS and Linux; `plugin.yaml` `provides_tools` lists exactly the registered tools; version `0.1.0` agrees in `plugin.yaml`, `pyproject.toml` and the package; a cold clone passes the gate.
+      Touches: `LICENSE`, `SECURITY.md`, `README.md`, `.github/workflows/ci.yml`, `plugin.yaml`, `pyproject.toml`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-013   Gated: none
 - [x] T-039 — Declare the plugin settings and make `wow_env` honour `wow_root` (2026-11-11, this commit)
       Why: SPEC-PLUGIN §11 names three settings (`wow_root`, `flavor`, `api_source`) and no task carried them; without `wow_root`, a user whose game is outside the two default folders must pass `root` on every call. Found while building T-003.
       Accept: `plugin.yaml` declares `config_schema` with `wow_root`, `flavor` (default `_forever_`) and `api_source` (`auto` | `export` | `mirror`); a unit test registers the plugin with a context that supplies `wow_root` (read the way `hermes-coreai` reads its settings) naming a fake install, and `wow_env` with no `root` finds it and searches nowhere else; with no setting the default locations are searched; `hermes plugins validate .` reports the config schema as declared and passes. Full gate green.

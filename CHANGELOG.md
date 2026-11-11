@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-014 — Catalog baseline: MIT `LICENSE`, `SECURITY.md`, a disclosure section, and CI that runs the full gate on macOS and Linux
 2026-11-11 — T-039 — Declared `wow_root`, `flavor`, and `api_source`. `wow_env` with no `root` searches only `wow_root` when that setting is set, and the two default folders when it is not
 2026-11-11 — T-013 — Added the `wow-addon-builder` skill, `/wow status`, and `hermes wow status` / `check`: status prints the install, build, and index; `check` exits non-zero when the addon fails
 2026-11-11 — T-011 — Added `wow_new`: scaffolds an addon from the building blocks into an empty folder, and refuses a folder that already has files

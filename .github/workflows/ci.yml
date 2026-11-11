@@ -1,5 +1,4 @@
-# [2026-11-11 T-002] Least-privilege CI for hermes-wow-plugin. Runs every gate that does not need a
-# Hermes install; `hermes plugins validate .` stays a local gate (AGENTS.md → Commands).
+# [2026-11-11 T-014] Full gate on macOS and Linux, including Hermes catalog validation.
 name: CI
 
 on:
@@ -13,7 +12,7 @@ permissions:
 
 jobs:
   gate:
-    name: Pytest, Ruff, Mypy (${{ matrix.os }})
+    name: Full gate (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -29,14 +28,14 @@ jobs:
       - name: Sync dependencies
         run: uv sync --all-groups
 
-      - name: Ruff lint
-        run: uv run ruff check .
+      - name: Pytest, Ruff, and Mypy
+        run: |
+          uv run pytest --cov=src/wow_addon_forge --cov-fail-under=85
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run mypy src
 
-      - name: Ruff format check
-        run: uv run ruff format --check .
-
-      - name: Mypy strict
-        run: uv run mypy src
-
-      - name: Pytest with the coverage floor
-        run: uv run pytest --cov=src/wow_addon_forge --cov-fail-under=85
+      - name: Install Hermes Agent and validate
+        run: |
+          git clone --depth 1 https://github.com/NousResearch/hermes-agent.git "$RUNNER_TEMP/hermes-agent"
+          uv --directory "$RUNNER_TEMP/hermes-agent" run hermes plugins validate "$GITHUB_WORKSPACE" --install-deps

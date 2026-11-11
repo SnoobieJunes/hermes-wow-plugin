@@ -69,14 +69,26 @@ uv run pytest --cov=src/wow_addon_forge --cov-fail-under=85 && uv run ruff check
 ```
 
 Lua code is checked and tested in an embedded Lua 5.1 VM (`lupa`), not the system `lua`.
-Install instructions for users arrive in T-014.
+
+## Install
+
+Requires [Hermes Agent](https://github.com/NousResearch/hermes-agent). The plugin declares one Python dependency, `lupa`, which Hermes installs only with your consent.
+
+From a checkout, for development:
+
+```bash
+uv sync --all-groups
+hermes plugins validate . --install-deps
+```
+
+A linked checkout is enabled with `hermes plugins enable wow-addon-forge`. Catalog install (`hermes plugins install wow-addon-forge`) waits until the plugin is published.
 
 `env` is the command-line twin of the `wow_env` tool. It only reads. It looks in
-`/Applications/World of Warcraft` and `C:\Program Files (x86)\World of Warcraft`;
-pass `--root "/path/to/World of Warcraft"` for any other folder. With no install
-found it prints a `no-install` error as JSON and exits with status 1. The Interface
-number it reports is derived from the client version (1.60.1 gives 16001) and the
-output says so in `interface_source`.
+`/Applications/World of Warcraft` and `C:\Program Files (x86)\World of Warcraft`,
+or only in `wow_root` when that setting is set. Pass `--root` for any other folder.
+With no install found it prints a `no-install` error as JSON and exits with status 1.
+The Interface number it reports is derived from the client version (1.60.1 gives 16001)
+and the output says so in `interface_source`.
 
 `api` is the command-line twin of the `wow_api` tool (`sync`, `status`, `lookup <name>`,
 `search <query>`, `events [query]`). `api sync` fetches the `forever` branches of
@@ -87,34 +99,21 @@ writes the index atomically under `$HERMES_HOME/cache/wow-addon-forge/api-index`
 export (`--source export`) is deferred to T-044 and returns an explicit
 `export-not-supported` error.
 
-## What the plugin touches on your machine
+## Disclosure
 
-Planned, per `docs/SPEC-PLUGIN.md` §13; becomes a tested statement in T-014.
-Today the shipping tools are `wow_env` (reads `.build.info`, `.flavor.info`, addon TOC
-files under `Interface/AddOns`, and counts folders under `WTF/Account` without reporting
-account names), `wow_api` (fetches the public GitHub documentation mirrors on `sync`
-and writes only the API index cache under `~/.hermes/cache/wow-addon-forge/api-index`),
-`wow_check` / `wow_test` (read the target addon folder and the cached API index and
-write nothing), `wow_errors` (reads `WTF/Account/**/SavedVariables/ForgeProbe.lua`
-only, writes nothing, and never prints an account folder name), `wow_savedvars`
-(reads one addon's SavedVariables the same way, still without printing an account
-name), and `wow_install` (writes only `<install>/<flavor>/Interface/AddOns/<name>`
-and a backup under `~/.hermes/cache/wow-addon-forge/backups`, never inside the game
-folder). `wow_errors` and `wow_savedvars` have no command-line twin yet. `wow_bridge`
-also has `python -m wow_addon_forge bridge pull --format discord`, which prints one
-line per new outbox record and nothing when there is none. Latency in each direction
-is one `/reload` or logout. The plugin holds no Discord credential.
+This is the catalog disclosure from `docs/SPEC-PLUGIN.md` §13, as the shipping tools behave.
 
-- Network: downloads of the public API documentation mirrors, only when you run
-  an API sync.
-- Reads: your WoW install (`Interface/AddOns`, SavedVariables under `WTF`).
-- Writes: an addon folder when you install one, and `Inbox.lua` when you push
-  from the bridge.
-- Never: input automation, game memory, gold-bid loot systems, telemetry.
+- Network: GitHub raw downloads of the API documentation mirrors, only on `wow_api sync`.
+- Reads outside the plugin: the WoW install (`Interface/AddOns`, `WTF/**` SavedVariables, `.build.info`). Account folder names are counted and never printed.
+- Writes outside the plugin: `Interface/AddOns/<name>` on `wow_install`, and `Inbox.lua` on `wow_bridge push`. Each is an explicit tool call. Backups and the API index cache stay under `~/.hermes/cache/wow-addon-forge/`.
+- No shell commands, no background processes, no stored credentials, no telemetry, no self-update.
+- Never: input automation, game memory, or a gold-bid loot system.
+
+`wow_env` looks in `/Applications/World of Warcraft` and `C:\Program Files (x86)\World of Warcraft`, or only in `wow_root` when that setting is set. Pass `--root` to look at one other folder. With no install found it prints a `no-install` error as JSON and exits with status 1. The Interface number it reports is derived from the client version (1.60.1 gives 16001) and the output says so in `interface_source`.
 
 ## License
 
-MIT — the file arrives in T-014.
+MIT. See [LICENSE](LICENSE). Report a vulnerability as [SECURITY.md](SECURITY.md) describes.
 
 World of Warcraft is a trademark of Blizzard Entertainment. This project is not
 affiliated with or endorsed by Blizzard.

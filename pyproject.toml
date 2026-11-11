@@ -11,7 +11,8 @@ name = "wow-addon-forge"
 version = "0.1.0"
 description = "Hermes Agent plugin that builds World of Warcraft: Forever addons that load and run."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [
     { name = "Auston", email = "snoobiejunes@users.noreply.github.com" },

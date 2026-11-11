@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — CI clones Hermes to run the catalog gate  [decision]
+- Task: T-014
+- What: GitHub Actions clones `NousResearch/hermes-agent` at depth 1 into the runner temp directory and runs `uv --directory that run hermes plugins validate . --install-deps`. It does not use the user install script, which writes a home directory.
+- Why: The full gate includes `hermes plugins validate`, and a catalog runner does not have Hermes preinstalled. Cloning into the repo would make ruff scan Hermes itself.
+- Where: `.github/workflows/ci.yml`.
+- Plan: AGENTS.md said validate stays a local gate → T-014 requires it in CI, logged here. TASKS.md T-014 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — wow_root is the only search, flavor and api_source are defaults  [decision]
 - Task: T-039 (`docs/SPEC-PLUGIN.md` §11)
 - What: Empty `wow_root` means the two default install folders. A set `wow_root` is the only folder `wow_env` searches when the call omits `root`; an explicit `root` still wins. Omitted `wow_api` `flavor` and `source` use the settings (`_forever_` and `auto`).
