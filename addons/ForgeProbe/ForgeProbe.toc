@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: ForgeProbe
+## Notes: Capability probe and 200-entry Lua error ring for wow-addon-forge.
+## Author: Auston (@SnoobieJunes)
+## Version: 0.1.0
+## SavedVariables: ForgeProbeDB
+
+Core.lua

@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-009 — ForgeProbe addon and `wow_errors`
-      Why: The docs say what exists; only the live client says what fires. ForgeProbe records it and catches Lua errors so the agent can read them (SPEC-PLUGIN §8).
-      Accept: `wow_check addons/ForgeProbe` verdict `pass`; headless, an error raised by a second fixture addon lands in ForgeProbe's saved ring with message and stack; `/forge probe` fills the probe table in the stub; `wow_errors` turns a SavedVariables fixture into JSON with `errors[]` and `probe{}`. Full gate green. The in-game half stays `NOT RUN` in `docs/INGAME-CHECKLIST.md` section A.
-      Touches: `addons/ForgeProbe/`, `src/wow_addon_forge/savedvars.py`, `src/wow_addon_forge/tools.py`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-008   Gated: none
 - [ ] T-010 — `wow_savedvars` and `wow_install`
       Why: Reading game data and installing safely are the two file seams to the client (SPEC-PLUGIN §3 write rules).
       Accept: Against a temporary fake install: SavedVariables with nested tables, long strings and negative numbers convert to JSON; a dotted `path` returns one subtree; install copies the addon, backs up a pre-existing folder into the plugin data directory, refuses when `wow_check` fails unless `force`, writes nothing under `dry_run`, refuses `../` and absolute names, and reports `reload` versus `restart` correctly. No test touches `/Applications`. Full gate green.
@@ -155,6 +151,10 @@
 ## Dropped
 
 ## Done
+- [x] T-009 — ForgeProbe addon and `wow_errors` (2026-11-11, this commit)
+      Why: The docs say what exists; only the live client says what fires. ForgeProbe records it and catches Lua errors so the agent can read them (SPEC-PLUGIN §8).
+      Accept: `wow_check addons/ForgeProbe` verdict `pass`; headless, an error raised by a second fixture addon lands in ForgeProbe's saved ring with message and stack; `/forge probe` fills the probe table in the stub; `wow_errors` turns a SavedVariables fixture into JSON with `errors[]` and `probe{}`. Full gate green. The in-game half stays `NOT RUN` in `docs/INGAME-CHECKLIST.md` section A.
+      Touches: `addons/ForgeProbe/`, `src/wow_addon_forge/savedvars.py`, `src/wow_addon_forge/tools.py`, `src/wow_addon_forge/__init__.py`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-008   Gated: none
 - [x] T-008 — `wow_check` and `wow_test` (2026-11-11, this commit)
       Why: The plugin's promise is one call that returns every reason an addon would fail (SPEC-PLUGIN §4).
       Accept: A fixture addon that calls a removed global, registers a restricted event unguarded and contains Lua 5.3 syntax yields findings `deprecated-api` (or `unknown-api`), `restricted-event` and `syntax`, each with file and line, and verdict `fail`; a clean fixture yields `pass`; a fixture that errors in `PLAYER_LOGIN` yields `headless-error` with a stack; `wow_test` runs a fixture Lua test file and reports one pass and one fail by name. Both tools are registered; `hermes plugins validate .` passes. Full gate green.

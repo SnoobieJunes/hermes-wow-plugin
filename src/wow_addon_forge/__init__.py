@@ -15,9 +15,9 @@ from typing import Any
 __version__ = "0.1.0"
 PLUGIN_ID = "wow-addon-forge"
 TOOLSET = "wow"
-# [2026-11-11 T-008] Registered tools in registration order; plugin.yaml provides_tools
+# [2026-11-11 T-009] Registered tools in registration order; plugin.yaml provides_tools
 # must match this tuple 1:1.
-PROVIDES_TOOLS: tuple[str, ...] = ("wow_env", "wow_api", "wow_check", "wow_test")
+PROVIDES_TOOLS: tuple[str, ...] = ("wow_env", "wow_api", "wow_check", "wow_test", "wow_errors")
 
 __all__ = ["PLUGIN_ID", "PROVIDES_TOOLS", "TOOLSET", "__version__", "register_plugin"]
 

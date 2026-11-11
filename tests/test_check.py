@@ -565,12 +565,14 @@ class _RecordingContext:
         self.tools.append({"name": name, **kwargs})
 
 
-def test_register_tools_registers_all_four_tools(fake_fs_factory: Any, tmp_path: Path) -> None:
+def test_register_tools_registers_check_and_test_tools(
+    fake_fs_factory: Any, tmp_path: Path
+) -> None:
     base, files = _addon("Clean", {"Core.lua": _CLEAN_CORE}, saved="CleanDB", bridge=True)
     tools = _tools(fake_fs_factory, files, tmp_path)
     ctx = _RecordingContext()
     registered = register_tools(ctx, tools=tools)
-    assert registered == ["wow_env", "wow_api", "wow_check", "wow_test"]
+    assert {"wow_env", "wow_api", "wow_check", "wow_test"} <= set(registered)
     assert registered == list(PROVIDES_TOOLS)
     assert [item["name"] for item in ctx.tools] == registered
     for item in ctx.tools:

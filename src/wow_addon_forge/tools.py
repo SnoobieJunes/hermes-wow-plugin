@@ -6,7 +6,8 @@ Invariants owned by this file:
 - ``register_tools`` registers exactly the names in ``wow_addon_forge.PROVIDES_TOOLS``, which
   plugin.yaml ``provides_tools`` must match 1:1.
 - ``wow_env`` writes nothing. ``wow_api`` writes only the API index cache, and only on ``sync``,
-  which is also the plugin's only network call. ``wow_check`` and ``wow_test`` write nothing.
+  which is also the plugin's only network call. ``wow_check``, ``wow_test``, and ``wow_errors``
+  write nothing.
 """
 
 from __future__ import annotations
@@ -32,6 +33,7 @@ from wow_addon_forge.apidocs import (
 from wow_addon_forge.check import check_addon, run_addon_tests
 from wow_addon_forge.env import FileSystem, RealFileSystem, detect_installs
 from wow_addon_forge.luavm import LuaVMUnavailableError
+from wow_addon_forge.savedvars import SavedVarsReadError, read_forge_probe_errors
 
 WOW_ENV_SCHEMA: dict[str, Any] = {
     "name": "wow_env",
@@ -185,6 +187,38 @@ WOW_TEST_SCHEMA: dict[str, Any] = {
 
 _CHECK_CALL_HINT = 'Call wow_check with an object such as {"path": "addons/Guildhall"}.'
 _TEST_CALL_HINT = 'Call wow_test with an object such as {"path": "addons/Guildhall"}.'
+_ERRORS_CALL_HINT = 'Call wow_errors with an object such as {} or {"addon": "Guildhall"}.'
+
+WOW_ERRORS_SCHEMA: dict[str, Any] = {
+    "name": "wow_errors",
+    "description": (
+        "Read ForgeProbe's SavedVariables from the World of Warcraft install: captured in-game "
+        "Lua errors (message, stack, addon, count, time) and the latest live capability probe "
+        "(build info, event validity/registration, API presence, restriction states, and "
+        "addon-message echo result). Read-only: writes nothing."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "flavor": {
+                "type": "string",
+                "description": "Optional game flavor folder (default: _forever_).",
+            },
+            "account": {
+                "type": "string",
+                "description": (
+                    "Optional game account folder name under WTF/Account when multiple accounts "
+                    "hold ForgeProbe SavedVariables."
+                ),
+            },
+            "addon": {
+                "type": "string",
+                "description": "Optional addon name filter applied to captured errors.",
+            },
+        },
+        "additionalProperties": False,
+    },
+}
 
 
 def to_json(payload: Mapping[str, Any]) -> str:
@@ -674,6 +708,73 @@ class ForgeTools:
         """Handle a ``wow_test`` tool call and return its result as JSON text."""
         return to_json(self.test_result(args))
 
+    def errors_result(self, args: object = None) -> dict[str, Any]:
+        """Return the ``wow_errors`` result as plain data.
+
+        Why this exists:
+            Exposes ForgeProbe's captured Lua errors and capability probe from the client's
+            ``WTF/Account/**/SavedVariables/ForgeProbe.lua`` file without letting malformed
+            SavedVariables or account-name ambiguity leak as unhandled exceptions.
+
+        Args:
+            args: Tool arguments (``None`` treated as ``{}``): optional ``flavor``,
+                ``account`` and ``addon`` filter.
+
+        Returns:
+            ``{"ok": True, "flavor": ..., "errors": [...], "error_count": int,
+            "total_captured": int, "probe": {...}}`` on success, else ``error_result``.
+
+        Failure modes:
+            Never raises; maps ``SavedVarsReadError``, ``LuaVMUnavailableError`` and bad
+            argument types to standard error envelopes.
+        """
+        arguments: Mapping[str, Any]
+        if args is None:
+            arguments = {}
+        elif isinstance(args, Mapping):
+            arguments = args
+        else:
+            return error_result(
+                "bad-argument",
+                f"wow_errors arguments must be an object, got {type(args).__name__}",
+                _ERRORS_CALL_HINT,
+            )
+        for key in ("flavor", "account", "addon"):
+            val = arguments.get(key)
+            if val is not None and not isinstance(val, str):
+                return error_result(
+                    "bad-argument",
+                    f"{key} must be a string, got {type(val).__name__}",
+                    _ERRORS_CALL_HINT,
+                )
+        try:
+            report = read_forge_probe_errors(
+                self._fs,
+                roots=self._default_roots,
+                flavor=arguments.get("flavor"),
+                account=arguments.get("account"),
+                addon_filter=arguments.get("addon"),
+            )
+        except SavedVarsReadError as exc:
+            return error_result(exc.code, exc.message, exc.hint)
+        except LuaVMUnavailableError as exc:
+            return error_result(
+                "lua-vm-unavailable",
+                str(exc),
+                "Install the plugin's one dependency, lupa>=2.1,<3, then run the call again.",
+            )
+        except Exception as exc:
+            return error_result(
+                "internal-error",
+                f"{type(exc).__name__}: {exc}",
+                "This is a bug in wow-addon-forge; please report it with this message.",
+            )
+        return {"ok": True, **report}
+
+    def handle_errors(self, args: object = None, **_kwargs: Any) -> str:
+        """Handle a ``wow_errors`` tool call and return its result as JSON text."""
+        return to_json(self.errors_result(args))
+
 
 def wow_tools_available() -> bool:
     """Report whether the wow tools can run at all.
@@ -751,6 +852,13 @@ def register_tools(ctx: Any, *, tools: ForgeTools | None = None) -> list[str]:
             active.handle_test,
             "Run an addon's Lua 5.1 test suite in the headless runtime with simulated guildmates.",
             "🧪",
+        ),
+        (
+            "wow_errors",
+            WOW_ERRORS_SCHEMA,
+            active.handle_errors,
+            "Read captured in-game Lua errors and ForgeProbe capability results.",
+            "🩺",
         ),
     )
     registered: list[str] = []

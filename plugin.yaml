@@ -24,4 +24,5 @@ provides_tools:
   - wow_api
   - wow_check
   - wow_test
+  - wow_errors
 provides_hooks: []
