@@ -1,0 +1,58 @@
+-- Board checks for Guildhall (created 2026-11-11).
+-- Purpose: prove SPEC-GUILDHALL §8.1 headlessly: a post replicates to a second
+-- client, a pin sorts first, a non-author member cannot remove, a member cannot
+-- post by default, and the tab builds only when first shown.
+-- Invariant: every case runs in a fresh World; no case reads another's state.
+
+test('post_shows_on_second_client', function(ctx)
+    local ann = ctx.world:client('Ann', 1)
+    local bob = ctx.world:client('Bob', 2)
+    ctx.world:set_network({loss_rate = 0, duplicate_rate = 0})
+    local id = ann:eval('return Guildhall.Board.post("Raid Friday")')
+    assert_true(id, 'the officer post returned an id')
+    ctx.world:advance(5)
+    local rows = bob:eval('return Guildhall.Board.rows()')
+    assert_eq(#rows, 1, 'the second client holds one row')
+    assert_eq(rows[1].text, 'Raid Friday', 'the replicated post text')
+end)
+
+test('pins_sort_first', function(ctx)
+    local ann = ctx.world:client('Ann', 1)
+    ctx.world:set_network({loss_rate = 0, duplicate_rate = 0})
+    local first = ann:eval('return Guildhall.Board.post("first")')
+    local second = ann:eval('return Guildhall.Board.post("second")')
+    assert_true(first and second, 'both posts returned ids')
+    assert_true(ann:eval('return Guildhall.Board.pin("' .. first .. '")'), 'the officer pinned the first post')
+    ctx.world:advance(3)
+    local rows = ann:eval('return Guildhall.Board.rows()')
+    assert_eq(#rows, 2, 'both posts are visible')
+    assert_eq(rows[1].text, 'first', 'the pinned post sorts first')
+    assert_true(rows[1].pinned, 'the first row is marked pinned')
+end)
+
+test('remove_by_non_author_member_rejected', function(ctx)
+    local ann = ctx.world:client('Ann', 1)
+    local bob = ctx.world:client('Bob', 2)
+    ctx.world:set_network({loss_rate = 0, duplicate_rate = 0})
+    local id = ann:eval('return Guildhall.Board.post("hello")')
+    assert_true(id, 'the officer post returned an id')
+    ctx.world:advance(3)
+    assert_false(bob:eval('return Guildhall.Board.remove("' .. id .. '")'), 'a member who is not the author cannot remove')
+    assert_eq(ann:eval('return #Guildhall.Board.rows()'), 1, 'the post is still on the officer client')
+    assert_true(ann:eval('return Guildhall.Board.remove("' .. id .. '")'), 'the author removed the post')
+    assert_eq(ann:eval('return #Guildhall.Board.rows()'), 0, 'the removed post is gone from rows')
+end)
+
+test('member_post_refused_by_default', function(ctx)
+    local bob = ctx.world:client('Bob', 2)
+    ctx.world:set_network({loss_rate = 0, duplicate_rate = 0})
+    assert_false(bob:eval('return Guildhall.Board.post("hi")'), 'a member cannot post while allow_members is false')
+end)
+
+test('board_tab_builds_only_when_first_shown', function(ctx)
+    local ann = ctx.world:client('Ann', 1)
+    ctx.world:set_network({loss_rate = 0, duplicate_rate = 0})
+    assert_false(ann:eval('return Guildhall.BoardTab.built'), 'the tab is not built at load')
+    assert_true(ann:eval('return Guildhall.Window.show_tab("board")'), 'the board tab can be shown')
+    assert_true(ann:eval('return Guildhall.BoardTab.built'), 'showing the tab built it')
+end)
