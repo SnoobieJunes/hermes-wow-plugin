@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-021 — Guildhall Marks ledger: claims attested by half the named guildmates credit with no officer, lone claims wait for officer approval, daily caps hold per activity, spends never take a balance below zero, staked rewards refund on cancel, and balances survive a checkpoint — five simulated clients agree exactly; built by fresh Hermes sessions through the plugin's tools
 2026-11-11 — T-020 — Guildhall Calendar: officer events (openable to members), self-only sign-ups with live role counts, author/officer edits and cancels, and a login reminder for events starting within 24 hours; built by a fresh Hermes session through the plugin's tools
 2026-11-11 — T-043 — Guildhall Board: officer posts (openable to members by a switch), pins sorted first, comments, and author/officer removal, all replicated over the guild sync log with a board tab that builds only when first shown; built by a fresh Hermes session through the plugin's tools
 2026-11-11 — T-047 — The sync building block can now replicate generic record payloads (for example a board post's text) through a Codec wire form alongside the original `{who, n}` form (no user-visible change until a module authors such records)
