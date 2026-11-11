@@ -83,6 +83,10 @@
 ## Dropped
 
 ## Done
+- [x] T-057 — Board tab: post box and refresh-on-show for every tab (2026-11-11, this commit)
+      Why: Live T-036 evidence: the Board tab renders but offers no way to write a post, and every tab snapshots its lines at first build, so nothing new ever appears — the demo's centre cannot be used in game.
+      Accept: Headless: typing in the Board post box and clicking Post authors a board.post that appears in the tab's lines; re-showing any tab refreshes its lines from the fold (a post authored elsewhere appears); laziness preserved (nothing builds before first show). `wow_check` verdict `pass`. Full gate green. Live retest under T-036.
+      Touches: `addons/Guildhall/UI/TabBoard.lua`, `addons/Guildhall/UI/TabCalendar.lua`, `addons/Guildhall/UI/TabMarks.lua`, `src/wow_addon_forge/blocks/window/UI/Window.lua`, `addons/Guildhall/UI/Window.lua`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-053   Gated: none
 - [x] T-056 — Rewrite README for humans (2026-11-11, this commit)
       Why: The GitHub front page is the hackathon's first impression; the current one leads with tool internals instead of what a player gets.
       Accept: README leads with value, features and roadmap in plain language; install/run/test commands stay executable as written (AGENTS.md contract); the §13 disclosure and honest headless-vs-in-game status stay accurate (no feature claimed shipped that TASKS.md has not closed). Full gate green.

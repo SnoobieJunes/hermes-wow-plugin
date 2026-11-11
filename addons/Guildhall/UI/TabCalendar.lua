@@ -35,25 +35,49 @@ local function line_for(row)
     return line
 end
 
-local function build(frame)
-    ns.CalendarTab.built = true
-    ns.CalendarTab.lines = {}
+-- [2026-11-11 T-057] Pooled FontStrings + refresh-on-show, same shape as
+-- TabBoard: a one-time snapshot could never show an event created (or a
+-- sign-up received) after the tab was first built.
+local texts = {}
+
+local function refresh()
     local rows = ns.Calendar.events()
-    local font = (ns.Theme and ns.Theme.font) or "GameFontNormal"
+    local lines = {}
     local shown = math.min(#rows, MAX_LINES)
     for i = 1, shown do
-        local line = line_for(rows[i])
-        ns.CalendarTab.lines[#ns.CalendarTab.lines + 1] = line
+        lines[#lines + 1] = line_for(rows[i])
+    end
+    ns.CalendarTab.lines = lines
+    for i = 1, MAX_LINES do
+        local text = texts[i]
+        if text ~= nil then
+            if lines[i] ~= nil then
+                text:SetText(lines[i])
+                text:Show()
+            else
+                text:Hide()
+            end
+        end
+    end
+end
+
+ns.CalendarTab.refresh = refresh
+
+local function build(frame)
+    ns.CalendarTab.built = true
+    local font = (ns.Theme and ns.Theme.font) or "GameFontNormal"
+    for i = 1, MAX_LINES do
         local text = frame:CreateFontString(nil, "OVERLAY", font)
         text:SetPoint("TOPLEFT", 16, -40 - (i - 1) * 14)
-        text:SetText(line)
+        texts[i] = text
     end
+    refresh()
 end
 
 -- [2026-11-11 T-020] Registration only: ns.Window owns the frame and calls
 -- build(frame) the first time the tab is shown (SPEC-GUILDHALL §9).
 if type(ns.Window) == "table" and type(ns.Window.register_tab) == "function" then
-    ns.Window.register_tab("calendar", build)
+    ns.Window.register_tab("calendar", build, refresh)
 end
 
 return ns.CalendarTab

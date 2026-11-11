@@ -53,11 +53,19 @@ local function make_button(tab)
     tab.button = button
 end
 
-function ns.Window.register_tab(tab_id, build)
+function ns.Window.register_tab(tab_id, build, refresh)
     if type(tab_id) ~= "string" or type(build) ~= "function" then
         return false
     end
-    local tab = { id = tab_id, build = build, built = false }
+    -- [2026-11-11 T-057] Optional refresh: replayed on every show after the
+    -- first build, so a tab repaints from current state instead of the
+    -- snapshot it was built from. Tabs without one behave as before.
+    local tab = {
+        id = tab_id,
+        build = build,
+        refresh = type(refresh) == "function" and refresh or nil,
+        built = false,
+    }
     ns.Window.tabs[#ns.Window.tabs + 1] = tab
     if ns.Window.built then
         make_button(tab)
@@ -171,6 +179,10 @@ function ns.Window.show_tab(tab_id)
                 tab.build(tab.container)
                 tab.built = true
                 ns.Window.built_tabs[tab_id] = true
+            elseif tab.refresh ~= nil then
+                -- [2026-11-11 T-057] Re-show repaints; a refresh error must
+                -- never take the window down with it.
+                pcall(tab.refresh)
             end
             for j = 1, #ns.Window.tabs do
                 local other = ns.Window.tabs[j]

@@ -70,3 +70,25 @@ def test_board_tab_builds_only_when_first_shown() -> None:
     assert ann.run_lua('return Guildhall.Window.show_tab("board")') is True
     assert ann.run_lua("return Guildhall.BoardTab.built") is True
     assert ann.errors == []
+
+
+def test_board_post_box_posts_and_tab_refreshes_on_show() -> None:
+    # [2026-11-11 T-057] Live regression: the Board tab had no way to write
+    # a post and never repainted after first build.
+    world, ann, bob = _pair(57057)
+    assert ann.run_lua('return Guildhall.Window.show_tab("board")') is True
+    assert ann.run_lua("return #Guildhall.BoardTab.lines") == 0
+    ann.run_lua('Guildhall.BoardTab.editbox:SetText("Raid Friday 8pm")')
+    ann.run_lua("local b = Guildhall.BoardTab.post_button; b:GetScript('OnClick')(b)")
+    assert ann.run_lua("return #Guildhall.Board.rows()") == 1
+    assert ann.run_lua("return Guildhall.BoardTab.lines[1]") == (
+        f"{ann.full_name}: Raid Friday 8pm"
+    )
+    # A post arriving from elsewhere appears when the tab is shown again.
+    assert ann.run_lua('return Guildhall.Board.post("Bring flasks")')
+    assert ann.run_lua("return #Guildhall.BoardTab.lines") == 1
+    assert ann.run_lua('return Guildhall.Window.show_tab("board")') is True
+    assert ann.run_lua("return #Guildhall.BoardTab.lines") == 2
+    world.advance(10)
+    assert bob.run_lua("return #Guildhall.Board.rows()") == 2
+    assert ann.errors == [] and bob.errors == []
