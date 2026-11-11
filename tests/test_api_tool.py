@@ -266,11 +266,11 @@ def test_11_handle_api_ignores_extra_kwargs(fake_fs_factory: Any, tmp_path: Path
 
 
 def test_12_register_tools_and_wow_api_schema(fake_fs_factory: Any, tmp_path: Path) -> None:
-    """12: register_tools registers both tools; the wow_api schema pins the actions."""
+    """12: register_tools matches PROVIDES_TOOLS; the wow_api schema pins the actions."""
     tools = make_tools(fake_fs_factory, tmp_path)
     ctx = RecordingContext()
     registered = register_tools(ctx, tools=tools)
-    assert registered == ["wow_env", "wow_api"]
+    assert {"wow_env", "wow_api"} <= set(registered)
     assert registered == list(PROVIDES_TOOLS)
     api_tool = next(item for item in ctx.tools if item["name"] == "wow_api")
     assert api_tool["schema"] is WOW_API_SCHEMA

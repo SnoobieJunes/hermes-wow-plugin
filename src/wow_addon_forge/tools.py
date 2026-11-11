@@ -6,7 +6,7 @@ Invariants owned by this file:
 - ``register_tools`` registers exactly the names in ``wow_addon_forge.PROVIDES_TOOLS``, which
   plugin.yaml ``provides_tools`` must match 1:1.
 - ``wow_env`` writes nothing. ``wow_api`` writes only the API index cache, and only on ``sync``,
-  which is also the plugin's only network call.
+  which is also the plugin's only network call. ``wow_check`` and ``wow_test`` write nothing.
 """
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ from wow_addon_forge.apidocs import (
     fetch_mirror_bundle,
     normalise_flavor,
 )
+from wow_addon_forge.check import check_addon, run_addon_tests
 from wow_addon_forge.env import FileSystem, RealFileSystem, detect_installs
 from wow_addon_forge.luavm import LuaVMUnavailableError
 
@@ -115,6 +116,75 @@ WOW_API_SCHEMA: dict[str, Any] = {
 }
 
 _API_CALL_HINT = 'Call wow_api with an object such as {"action": "status"}.'
+
+WOW_CHECK_SCHEMA: dict[str, Any] = {
+    "name": "wow_check",
+    "description": (
+        "Run the six-stage static and headless verification pipeline on a World of Warcraft "
+        "addon folder: TOC lint, Lua 5.1 syntax, bytecode global/member resolution, API and "
+        "event restriction/deprecation rules against the cached client index, headless load "
+        "with slash-command invocation and Simulated /reload, and efficiency lints. Returns "
+        "findings with file and line plus verdict ('pass' or 'fail'). Read-only: writes nothing."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "path": {
+                "type": "string",
+                "description": "Path to the addon folder (the directory holding <Addon>.toc).",
+            },
+            "flavor": {
+                "type": "string",
+                "description": "Optional game flavor (default: forever).",
+            },
+        },
+        "required": ["path"],
+        "additionalProperties": False,
+    },
+}
+
+WOW_TEST_SCHEMA: dict[str, Any] = {
+    "name": "wow_test",
+    "description": (
+        "Run an addon's own Lua 5.1 test suite in the headless WoW runtime, with one or more "
+        "simulated guildmates per test case. Discovers Tests/*.lua by default, runs each "
+        "test(name, fn) case in an isolated World, and reports pass/fail per test name. "
+        "Read-only: writes nothing."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "path": {
+                "type": "string",
+                "description": "Path to the addon folder under test.",
+            },
+            "tests": {
+                "anyOf": [
+                    {"type": "string"},
+                    {"type": "array", "items": {"type": "string"}},
+                ],
+                "description": (
+                    "Optional. A relative or full Lua test file or folder path (or list of "
+                    "paths). Omit to run every *.lua file under Tests/."
+                ),
+            },
+            "clients": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Optional number of simulated guildmates per test (default: 1).",
+            },
+            "flavor": {
+                "type": "string",
+                "description": "Optional game flavor for the API index (default: forever).",
+            },
+        },
+        "required": ["path"],
+        "additionalProperties": False,
+    },
+}
+
+_CHECK_CALL_HINT = 'Call wow_check with an object such as {"path": "addons/Guildhall"}.'
+_TEST_CALL_HINT = 'Call wow_test with an object such as {"path": "addons/Guildhall"}.'
 
 
 def to_json(payload: Mapping[str, Any]) -> str:
@@ -448,6 +518,162 @@ class ForgeTools:
         """
         return to_json(self.api_result(args))
 
+    def _load_index(self, raw_flavor: object) -> ApiIndex:
+        flavor = normalise_flavor(raw_flavor)
+        store = IndexStore(self._cache_dir if self._cache_dir is not None else default_cache_dir())
+        return store.load(flavor)
+
+    def check_result(self, args: object = None) -> dict[str, Any]:
+        """Return the ``wow_check`` result as plain data.
+
+        Why this exists:
+            Both the Hermes ``wow_check`` handler and later CLI / ``wow_install`` pre-checks
+            evaluate addon readiness through this one result builder.
+
+        Args:
+            args: Tool arguments: ``path`` (required non-empty string) and optional
+                ``flavor``.
+
+        Returns:
+            ``{"ok": True, **report}`` where ``report`` carries ``verdict`` (``"pass"`` or
+            ``"fail"``), ``error_count``, ``warning_count`` and ``findings``; note that an
+            addon whose ``verdict`` is ``"fail"`` still has ``ok: True`` (the check succeeded
+            and found addon errors), whereas a missing API index or bad ``path`` returns an
+            ``error_result`` (``ok: False``).
+
+        Failure modes:
+            Never raises; returns ``bad-argument``, ``bad-path``, ``no-index``,
+            ``stale-index``, ``lua-vm-unavailable`` or ``internal-error``.
+        """
+        if not isinstance(args, Mapping):
+            return error_result(
+                "bad-argument",
+                f"wow_check arguments must be an object, got {type(args).__name__}",
+                _CHECK_CALL_HINT,
+            )
+        path = args.get("path")
+        if not isinstance(path, str) or not path.strip():
+            return error_result(
+                "bad-argument",
+                "wow_check needs path: a non-empty addon folder path",
+                _CHECK_CALL_HINT,
+            )
+        try:
+            index = self._load_index(args.get("flavor"))
+            report = check_addon(path.strip(), index=index, fs=self._fs)
+        except ApiIndexError as exc:
+            return error_result(exc.code, exc.message, exc.hint)
+        except ValueError as exc:
+            return error_result(
+                "bad-path",
+                str(exc),
+                "Pass the path to an existing addon directory containing <Addon>.toc.",
+            )
+        except LuaVMUnavailableError as exc:
+            return error_result(
+                "lua-vm-unavailable",
+                str(exc),
+                "Install the plugin's one dependency, lupa>=2.1,<3, then run the call again.",
+            )
+        except Exception as exc:
+            return error_result(
+                "internal-error",
+                f"{type(exc).__name__}: {exc}",
+                "This is a bug in wow-addon-forge; please report it with this message.",
+            )
+        return {"ok": True, **report}
+
+    def handle_check(self, args: object = None, **_kwargs: Any) -> str:
+        """Handle a ``wow_check`` tool call and return its result as JSON text."""
+        return to_json(self.check_result(args))
+
+    def test_result(self, args: object = None) -> dict[str, Any]:
+        """Return the ``wow_test`` result as plain data.
+
+        Why this exists:
+            Runs an addon's headless Lua test suite against the cached API index and shapes
+            all argument/index/path failures into the standard tool error envelope.
+
+        Args:
+            args: Tool arguments: ``path`` (required), optional ``tests`` (string or list of
+                strings), optional ``clients`` (integer >= 1), and optional ``flavor``.
+
+        Returns:
+            ``{"ok": True, **report}`` with ``verdict``, ``total``, ``passed``, ``failed``
+            and per-case ``results``; or ``error_result`` when arguments, path or index fail.
+
+        Failure modes:
+            Never raises.
+        """
+        if not isinstance(args, Mapping):
+            return error_result(
+                "bad-argument",
+                f"wow_test arguments must be an object, got {type(args).__name__}",
+                _TEST_CALL_HINT,
+            )
+        path = args.get("path")
+        if not isinstance(path, str) or not path.strip():
+            return error_result(
+                "bad-argument",
+                "wow_test needs path: a non-empty addon folder path",
+                _TEST_CALL_HINT,
+            )
+        raw_tests = args.get("tests")
+        tests_arg: str | list[str] | None
+        if raw_tests is None:
+            tests_arg = None
+        elif isinstance(raw_tests, str):
+            tests_arg = raw_tests
+        elif isinstance(raw_tests, Sequence) and all(isinstance(item, str) for item in raw_tests):
+            tests_arg = list(raw_tests)
+        else:
+            return error_result(
+                "bad-argument",
+                "tests must be a string path or an array of string paths",
+                _TEST_CALL_HINT,
+            )
+        raw_clients = args.get("clients", 1)
+        if isinstance(raw_clients, bool) or not isinstance(raw_clients, int) or raw_clients < 1:
+            return error_result(
+                "bad-argument",
+                f"clients must be an integer >= 1, got {raw_clients!r}",
+                _TEST_CALL_HINT,
+            )
+        try:
+            index = self._load_index(args.get("flavor"))
+            report = run_addon_tests(
+                path.strip(),
+                index=index,
+                fs=self._fs,
+                tests=tests_arg,
+                clients=raw_clients,
+            )
+        except ApiIndexError as exc:
+            return error_result(exc.code, exc.message, exc.hint)
+        except ValueError as exc:
+            return error_result(
+                "bad-path",
+                str(exc),
+                "Pass an existing addon directory and valid test file/folder paths.",
+            )
+        except LuaVMUnavailableError as exc:
+            return error_result(
+                "lua-vm-unavailable",
+                str(exc),
+                "Install the plugin's one dependency, lupa>=2.1,<3, then run the call again.",
+            )
+        except Exception as exc:
+            return error_result(
+                "internal-error",
+                f"{type(exc).__name__}: {exc}",
+                "This is a bug in wow-addon-forge; please report it with this message.",
+            )
+        return {"ok": True, **report}
+
+    def handle_test(self, args: object = None, **_kwargs: Any) -> str:
+        """Handle a ``wow_test`` tool call and return its result as JSON text."""
+        return to_json(self.test_result(args))
+
 
 def wow_tools_available() -> bool:
     """Report whether the wow tools can run at all.
@@ -482,7 +708,7 @@ def register_tools(ctx: Any, *, tools: ForgeTools | None = None) -> list[str]:
             built when ``None``.
 
     Returns:
-        The tool names registered, in registration order: ``["wow_env", "wow_api"]``.
+        The tool names registered, in registration order, matching ``PROVIDES_TOOLS``.
 
     Failure modes:
         Raises ``TypeError`` when ``ctx.register_tool`` is missing or not callable.
@@ -495,9 +721,9 @@ def register_tools(ctx: Any, *, tools: ForgeTools | None = None) -> list[str]:
             "register_tools(ctx) needs a context with register_tool; got " + type(ctx).__name__
         )
     active = tools if tools is not None else ForgeTools()
-    # [2026-11-11 T-005] One spec row per tool: each tool task adds a row (wow_api is the
-    # second), and the returned names stay in registration order by construction.
-    specs = (
+    # [2026-11-11 T-008] One spec row per tool: each tool task adds a row, and the returned
+    # names stay in registration order by construction.
+    specs: tuple[tuple[str, dict[str, Any], Callable[..., str], str, str], ...] = (
         (
             "wow_env",
             WOW_ENV_SCHEMA,
@@ -511,6 +737,20 @@ def register_tools(ctx: Any, *, tools: ForgeTools | None = None) -> list[str]:
             active.handle_api,
             "Build and query the index of functions, events and enums in a WoW client build.",
             "📚",
+        ),
+        (
+            "wow_check",
+            WOW_CHECK_SCHEMA,
+            active.handle_check,
+            "Verify a WoW addon statically and headlessly against the client API index.",
+            "🛡️",
+        ),
+        (
+            "wow_test",
+            WOW_TEST_SCHEMA,
+            active.handle_test,
+            "Run an addon's Lua 5.1 test suite in the headless runtime with simulated guildmates.",
+            "🧪",
         ),
     )
     registered: list[str] = []

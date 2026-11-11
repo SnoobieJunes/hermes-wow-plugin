@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-008 — `wow_check` and `wow_test`
-      Why: The plugin's promise is one call that returns every reason an addon would fail (SPEC-PLUGIN §4).
-      Accept: A fixture addon that calls a removed global, registers a restricted event unguarded and contains Lua 5.3 syntax yields findings `deprecated-api` (or `unknown-api`), `restricted-event` and `syntax`, each with file and line, and verdict `fail`; a clean fixture yields `pass`; a fixture that errors in `PLAYER_LOGIN` yields `headless-error` with a stack; `wow_test` runs a fixture Lua test file and reports one pass and one fail by name. Both tools are registered; `hermes plugins validate .` passes. Full gate green.
-      Touches: `src/wow_addon_forge/check.py`, `src/wow_addon_forge/tools.py`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-007   Gated: none
 - [ ] T-009 — ForgeProbe addon and `wow_errors`
       Why: The docs say what exists; only the live client says what fires. ForgeProbe records it and catches Lua errors so the agent can read them (SPEC-PLUGIN §8).
       Accept: `wow_check addons/ForgeProbe` verdict `pass`; headless, an error raised by a second fixture addon lands in ForgeProbe's saved ring with message and stack; `/forge probe` fills the probe table in the stub; `wow_errors` turns a SavedVariables fixture into JSON with `errors[]` and `probe{}`. Full gate green. The in-game half stays `NOT RUN` in `docs/INGAME-CHECKLIST.md` section A.
@@ -159,6 +155,10 @@
 ## Dropped
 
 ## Done
+- [x] T-008 — `wow_check` and `wow_test` (2026-11-11, this commit)
+      Why: The plugin's promise is one call that returns every reason an addon would fail (SPEC-PLUGIN §4).
+      Accept: A fixture addon that calls a removed global, registers a restricted event unguarded and contains Lua 5.3 syntax yields findings `deprecated-api` (or `unknown-api`), `restricted-event` and `syntax`, each with file and line, and verdict `fail`; a clean fixture yields `pass`; a fixture that errors in `PLAYER_LOGIN` yields `headless-error` with a stack; `wow_test` runs a fixture Lua test file and reports one pass and one fail by name. Both tools are registered; `hermes plugins validate .` passes. Full gate green.
+      Touches: `src/wow_addon_forge/check.py`, `src/wow_addon_forge/luacheck.py`, `src/wow_addon_forge/tools.py`, `src/wow_addon_forge/__init__.py`, `plugin.yaml`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-007   Gated: none
 - [x] T-007 — Headless runtime: the strict stub of the game (2026-11-11, this commit)
       Why: "It runs" has to be executed, not asserted (SPEC-PLUGIN §6); it is also what lets a loop test Guildhall without the client.
       Accept: Tests prove: two simulated clients load a fixture addon; a guild addon message fires `CHAT_MSG_ADDON` on the other client only if it registered the prefix, with sender `Name-Realm`; a 256-byte message is refused; the 11th message inside one second returns the throttle result; reading an unknown `C_` member raises an error naming it; `RegisterEvent` of an unknown event raises; timers fire in order under `world.advance`; SavedVariables survive `client.reload()`; an active restriction regime turns a send into a refused call. Full gate green.

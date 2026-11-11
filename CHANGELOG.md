@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-008 — Added the `wow_check` and `wow_test` tools (`check.py`): `wow_check` runs the six-stage TOC, Lua 5.1 syntax, bytecode global/API/event, headless load + slash + `/reload`, and efficiency verification pipeline returning findings with file/line and `pass`/`fail` verdict; `wow_test` runs `Tests/*.lua` cases in isolated multi-client headless worlds
 2026-11-11 — T-007 — Added the headless WoW: Forever 1.60.1 runtime (`headless/`): multi-client Lua 5.1 sandbox with strict indexed globals and `C_*` namespaces, frames/widgets and event validation, virtual clock and `C_Timer`, addon-message routing/byte-limits/token-bucket throttling, restriction regimes, and SavedVariables persistence across `/reload` (no new CLI/tool surface yet; `wow_check` and `wow_test` wire it up in T-008)
 2026-11-11 — T-006 — Added Lua 5.1 syntax and bytecode global/member-access analysis (`luacheck.py`) and TOC lint (`tocfile.py`) ahead of `wow_check` (no user-visible change)
 2026-11-11 — T-005 — Added the API index and the `wow_api` tool (plus `python -m wow_addon_forge api`): syncs WoW: Forever 1.60.1 documentation and resource mirrors through the embedded Lua 5.1 VM into a local cache, and answers `status`, `lookup`, `search` and `events` queries with signatures, restriction and secret flags, deprecation replacements and nearest-name suggestions

@@ -14,16 +14,15 @@ Two things in one repository:
 
 For WoW players and guild officers who are not programmers.
 
-Status (2026-11-11, T-007): Hermes loads the plugin and two tools work: `wow_env`
-(install and addon detection) and `wow_api` (cached WoW: Forever 1.60.1 API index).
-Lua 5.1 static analysis (`luacheck`), TOC lint (`tocfile`), and the multi-client
-headless WoW runtime (`headless`) are in place ahead of `wow_check` and `wow_test`
-(T-008). Secret-value simulation in the headless runtime arrives in T-034; until it
-lands, `issecretvalue` returns `false` in the stub and the static `restricted-api`
-rule in `wow_check` is the only defence against unguarded secret returns. Guildhall
-is one skeleton file that the test suite loads in the headless runtime; it has not
-been loaded in the live game client. Everything else below is planned, and nothing
-is claimed to work until its task is closed in `TASKS.md`.
+Status (2026-11-11, T-008): Hermes loads the plugin and four tools work: `wow_env`
+(install and addon detection), `wow_api` (cached WoW: Forever 1.60.1 API index),
+`wow_check` (six-stage static and headless addon verification), and `wow_test`
+(isolated multi-client headless Lua 5.1 test runner). Secret-value simulation in the
+headless runtime arrives in T-034; until it lands, `issecretvalue` returns `false` in
+the stub and the static `restricted-api` rule in `wow_check` is the only defence
+against unguarded secret returns. Guildhall is one skeleton file that passes
+`wow_check`; it has not been loaded in the live game client. Everything else below is
+planned, and nothing is claimed to work until its task is closed in `TASKS.md`.
 
 ## Why a plugin and not a prompt
 
@@ -84,8 +83,10 @@ export (`--source export`) is deferred to T-044 and returns an explicit
 Planned, per `docs/SPEC-PLUGIN.md` §13; becomes a tested statement in T-014.
 Today the shipping tools are `wow_env` (reads `.build.info`, `.flavor.info`, addon TOC
 files under `Interface/AddOns`, and counts folders under `WTF/Account` without reporting
-account names) and `wow_api` (fetches the public GitHub documentation mirrors on `sync`
-and writes only the API index cache under `~/.hermes/cache/wow-addon-forge/api-index`).
+account names), `wow_api` (fetches the public GitHub documentation mirrors on `sync`
+and writes only the API index cache under `~/.hermes/cache/wow-addon-forge/api-index`),
+and `wow_check` / `wow_test` (read the target addon folder and the cached API index and
+write nothing).
 
 - Network: downloads of the public API documentation mirrors, only when you run
   an API sync.

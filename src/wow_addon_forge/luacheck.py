@@ -27,11 +27,16 @@ from wow_addon_forge.tocfile import Finding
 __all__ = [
     "FORBIDDEN_LUA_GLOBALS",
     "LUA_51_SAFE_GLOBALS",
+    "Constant",
     "Finding",
     "GlobalAccess",
+    "LocVar",
     "LuaFileAnalysis",
+    "Proto",
     "analyze_lua",
     "check_lua_syntax",
+    "collect_proto_accesses",
+    "compile_proto",
 ]
 
 # [2026-11-11 T-006] The standard globals WoW keeps from Lua 5.1 (plus the game's own string
@@ -631,3 +636,82 @@ def analyze_lua(source: str, chunk_name: str, *, runtime: Any | None = None) -> 
     accesses: list[GlobalAccess] = []
     _collect_accesses(proto, accesses)
     return LuaFileAnalysis(file=chunk_name, syntax_error=None, accesses=tuple(accesses))
+
+
+# [2026-11-11 T-008] Public aliases and entry points so wow_check (check.py) can inspect
+# per-Proto guard scopes, literal RegisterEvent/CreateFrame calls, and efficiency lints
+# from the exact compiled Lua 5.1 bytecode tree without duplicating undump logic.
+Constant = _Constant
+LocVar = _LocVar
+Proto = _Proto
+
+
+def collect_proto_accesses(proto: Proto, *, recursive: bool = True) -> tuple[GlobalAccess, ...]:
+    """Collect global accesses in ``proto`` (and optionally its nested child ``protos``).
+
+    Why this exists:
+        Guard checks in ``wow_check`` ask what one enclosing function references before
+        deciding whether a restricted call inside it is guarded; non-recursive collection
+        answers per-function without mixing sibling closures together.
+
+    Args:
+        proto: A compiled function block from ``compile_proto``.
+        recursive: When true, include nested child functions in pre-order; when false,
+            collect only ``proto``'s own instructions.
+
+    Returns:
+        The ``GlobalAccess`` items found.
+
+    Failure modes:
+        None.
+    """
+    if recursive:
+        items: list[GlobalAccess] = []
+        _collect_accesses(proto, items)
+        return tuple(items)
+    shallow = _Proto(
+        source=proto.source,
+        linedefined=proto.linedefined,
+        lastlinedefined=proto.lastlinedefined,
+        nups=proto.nups,
+        numparams=proto.numparams,
+        is_vararg=proto.is_vararg,
+        maxstacksize=proto.maxstacksize,
+        code=proto.code,
+        constants=proto.constants,
+        protos=(),
+        lineinfo=proto.lineinfo,
+        locvars=proto.locvars,
+        upvalues=proto.upvalues,
+    )
+    items = []
+    _collect_accesses(shallow, items)
+    return tuple(items)
+
+
+def compile_proto(
+    source: str, chunk_name: str, *, runtime: Any | None = None
+) -> tuple[Proto | None, Finding | None]:
+    """Compile ``source`` as Lua 5.1 and return ``(root_proto, syntax_finding)``.
+
+    Why this exists:
+        ``wow_check`` runs syntax, global-access, event-registration, and efficiency
+        analysis over the same compiled chunk; exposing the parsed ``Proto`` avoids
+        compiling and dumping each file twice.
+
+    Args:
+        source: Lua 5.1 source text.
+        chunk_name: Relative file path reported in findings.
+        runtime: Optional unsandboxed ``luavm.new_runtime(sandbox=False)``.
+
+    Returns:
+        ``(proto, None)`` when compilation succeeds, or ``(None, Finding)`` with
+        ``code="syntax"`` when Lua 5.1 rejects ``source``.
+
+    Failure modes:
+        Raises ``luavm.LuaVMUnavailableError`` if no Lua 5.1 VM can be created.
+    """
+    bytecode, finding = _compile_and_dump(source, chunk_name, runtime)
+    if finding is not None or bytecode is None:
+        return None, finding
+    return _parse_bytecode(bytecode), None

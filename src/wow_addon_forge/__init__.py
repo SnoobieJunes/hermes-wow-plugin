@@ -15,9 +15,9 @@ from typing import Any
 __version__ = "0.1.0"
 PLUGIN_ID = "wow-addon-forge"
 TOOLSET = "wow"
-# [2026-11-11 T-005] wow_env was the first tool and wow_api is the second; each later tool task
-# appends its name here and in plugin.yaml in the same commit.
-PROVIDES_TOOLS: tuple[str, ...] = ("wow_env", "wow_api")
+# [2026-11-11 T-008] Registered tools in registration order; plugin.yaml provides_tools
+# must match this tuple 1:1.
+PROVIDES_TOOLS: tuple[str, ...] = ("wow_env", "wow_api", "wow_check", "wow_test")
 
 __all__ = ["PLUGIN_ID", "PROVIDES_TOOLS", "TOOLSET", "__version__", "register_plugin"]
 
