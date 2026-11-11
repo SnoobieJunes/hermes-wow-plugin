@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-007 — Headless runtime: the strict stub of the game
-      Why: "It runs" has to be executed, not asserted (SPEC-PLUGIN §6); it is also what lets a loop test Guildhall without the client.
-      Accept: Tests prove: two simulated clients load a fixture addon; a guild addon message fires `CHAT_MSG_ADDON` on the other client only if it registered the prefix, with sender `Name-Realm`; a 256-byte message is refused; the 11th message inside one second returns the throttle result; reading an unknown `C_` member raises an error naming it; `RegisterEvent` of an unknown event raises; timers fire in order under `world.advance`; SavedVariables survive `client.reload()`; an active restriction regime turns a send into a refused call. Full gate green.
-      Touches: `src/wow_addon_forge/headless/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-005, T-006   Gated: none
 - [ ] T-008 — `wow_check` and `wow_test`
       Why: The plugin's promise is one call that returns every reason an addon would fail (SPEC-PLUGIN §4).
       Accept: A fixture addon that calls a removed global, registers a restricted event unguarded and contains Lua 5.3 syntax yields findings `deprecated-api` (or `unknown-api`), `restricted-event` and `syntax`, each with file and line, and verdict `fail`; a clean fixture yields `pass`; a fixture that errors in `PLAYER_LOGIN` yields `headless-error` with a stack; `wow_test` runs a fixture Lua test file and reports one pass and one fail by name. Both tools are registered; `hermes plugins validate .` passes. Full gate green.
@@ -163,6 +159,10 @@
 ## Dropped
 
 ## Done
+- [x] T-007 — Headless runtime: the strict stub of the game (2026-11-11, this commit)
+      Why: "It runs" has to be executed, not asserted (SPEC-PLUGIN §6); it is also what lets a loop test Guildhall without the client.
+      Accept: Tests prove: two simulated clients load a fixture addon; a guild addon message fires `CHAT_MSG_ADDON` on the other client only if it registered the prefix, with sender `Name-Realm`; a 256-byte message is refused; the 11th message inside one second returns the throttle result; reading an unknown `C_` member raises an error naming it; `RegisterEvent` of an unknown event raises; timers fire in order under `world.advance`; SavedVariables survive `client.reload()`; an active restriction regime turns a send into a refused call. Full gate green.
+      Touches: `src/wow_addon_forge/headless/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-005, T-006   Gated: none
 - [x] T-006 — Lua 5.1 static analysis and TOC lint (2026-11-11, this commit)
       Why: Syntax and name errors must be caught before anything runs (SPEC-PLUGIN §4 stages 1–3).
       Accept: Tests prove: a file using `goto` or `//` fails with code `syntax` and its line; global reads and writes of a fixture are listed with lines; `C_Item.GetItemInfo(x)` is reported as member access `C_Item.GetItemInfo`; `local CI = C_Item` is reported as a read of `C_Item`; TOC parsing returns the Interface list, the SavedVariables names and the file list, and flags a listed file that does not exist. Full gate green.

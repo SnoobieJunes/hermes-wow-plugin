@@ -14,12 +14,16 @@ Two things in one repository:
 
 For WoW players and guild officers who are not programmers.
 
-Status (2026-11-11, T-005): Hermes loads the plugin and two tools work: `wow_env`,
-which reports the WoW installs on this machine, and `wow_api`, which syncs and queries
-the client API index from the public `forever` documentation mirrors. Guildhall is one
-file that the test suite runs in a Lua 5.1 VM; it has not been loaded in the live
-game client. Everything else below is planned, and nothing is claimed to work
-until its task is closed in `TASKS.md`.
+Status (2026-11-11, T-007): Hermes loads the plugin and two tools work: `wow_env`
+(install and addon detection) and `wow_api` (cached WoW: Forever 1.60.1 API index).
+Lua 5.1 static analysis (`luacheck`), TOC lint (`tocfile`), and the multi-client
+headless WoW runtime (`headless`) are in place ahead of `wow_check` and `wow_test`
+(T-008). Secret-value simulation in the headless runtime arrives in T-034; until it
+lands, `issecretvalue` returns `false` in the stub and the static `restricted-api`
+rule in `wow_check` is the only defence against unguarded secret returns. Guildhall
+is one skeleton file that the test suite loads in the headless runtime; it has not
+been loaded in the live game client. Everything else below is planned, and nothing
+is claimed to work until its task is closed in `TASKS.md`.
 
 ## Why a plugin and not a prompt
 
