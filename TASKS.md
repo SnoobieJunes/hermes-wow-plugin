@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-017 — Building block `sync`: chunker, throttle, restriction queue, protocol
-      Why: Guildmates must converge without a server, inside the client's message limits (SPEC-GUILDHALL §5).
-      Accept: Headless simulation on an addon instantiated from the blocks: 5 clients, 200 records authored across them, 30% loss with reordering and duplication, one client joining late — all five reach one state hash within 10 simulated minutes; no message exceeds 255 bytes; no client sustains more than 1 message per second; nothing is sent while a restriction is active and the queue flushes when it lifts. `wow_check` verdict `pass`. Full gate green.
-      Touches: `src/wow_addon_forge/blocks/sync/`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-016, T-007   Gated: none
 - [ ] T-018 — Building block `trust`: roles and record acceptance
       Why: With no signatures, rank and sender are the only defences; they must hold (SPEC-GUILDHALL §6).
       Accept: Headless: a member-authored officer-kind record never reaches derived state; the same record relayed by an officer does; a record received from a third party is stored marked unverified and excluded from privileged effects; a self-only kind naming another character is rejected; demoting an author stops later records from applying; a non-member's messages are ignored. `wow_check` verdict `pass`. Full gate green.
@@ -135,6 +131,10 @@
 ## Dropped
 
 ## Done
+- [x] T-017 — Building block `sync`: chunker, throttle, restriction queue, protocol (2026-11-11, this commit)
+      Why: Guildmates must converge without a server, inside the client's message limits (SPEC-GUILDHALL §5).
+      Accept: Headless simulation on an addon instantiated from the blocks: 5 clients, 200 records authored across them, 30% loss with reordering and duplication, one client joining late — all five reach one state hash within 10 simulated minutes; no message exceeds 255 bytes; no client sustains more than 1 message per second; nothing is sent while a restriction is active and the queue flushes when it lifts. `wow_check` verdict `pass`. Full gate green.
+      Touches: `src/wow_addon_forge/blocks/sync/`, `tests/`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-016, T-007   Gated: none
 - [x] T-016 — Building block `log`: the replicated record log and reducers (2026-11-11, this commit)
       Why: One replicated log is the whole data model; convergence depends on it being order-independent (SPEC-GUILDHALL §4).
       Accept: Lua tests prove: applying the same 300 generated records in 50 shuffled orders yields one state hash; a duplicate record is a no-op; an unknown kind is stored but not reduced; a checkpoint followed by compaction leaves derived balances unchanged. An addon instantiated from `core` + `log` gets `wow_check` verdict `pass`. Full gate green.

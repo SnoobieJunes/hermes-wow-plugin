@@ -71,6 +71,14 @@ function ns.Log.heads(log)
     return heads
 end
 
+function ns.Log.get(log, author, seq)
+    local by_author = log.by[author]
+    if by_author == nil then
+        return nil
+    end
+    return by_author[seq]
+end
+
 function ns.Log.compact(log, cutoff)
     if type(cutoff) ~= "number" then
         return 0

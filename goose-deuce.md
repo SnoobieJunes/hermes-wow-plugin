@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — Sync wire prefix and message grammar  [decision]
+- Task: T-017 (`docs/SPEC-GUILDHALL.md` §5)
+- What: The sync block speaks prefix `GHSYNC` on `GUILD`. Kinds are `A`/`D` (author, seq, time, kind, who, amount), `H` (state hash), `V` (author heads), `Q` (a missing range), and `C` (a 255-byte chunk). At most one send per integer `GetTime` second. Catch-up is dropped before authored data when the queue exceeds 400. `ns.Log.get` is the lookup sync uses.
+- Why: SPEC-GUILDHALL §5 names the limits and the hello/vector/request/data idea, and does not name the prefix or the bytes. Trust and Marks will parse these messages; a second spelling would fork the wire.
+- Where: `src/wow_addon_forge/blocks/sync/Core/Sync.lua`, `src/wow_addon_forge/blocks/log/Core/Log.lua`.
+- Plan: SPEC-GUILDHALL §5 left the grammar unspecified → pinned here. TASKS.md T-017 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — Log reducer kinds and state hash  [decision]
 - Task: T-016 (`docs/SPEC-GUILDHALL.md` §4)
 - What: The log block reduces three kinds: `marks.credit` and `marks.debit` sum `p.n` into `p.who`, and `log.checkpoint` replaces balances with `p.balances` then allows compaction of records older than `p.cutoff`. Any other kind is stored and not folded. The state hash is sorted `who=amount` pairs joined by `|`.
