@@ -23,3 +23,5 @@ Bridge.lua
 Inbox.lua
 Modules/Board.lua
 UI/TabBoard.lua
+Modules/Calendar.lua
+UI/TabCalendar.lua

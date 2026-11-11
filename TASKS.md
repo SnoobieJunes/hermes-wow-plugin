@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-020 — Guildhall Calendar: events and sign-ups
-      Why: Sign-ups are the most-used officer tool and half of the Discord round trip (SPEC-GUILDHALL §8.2).
-      Accept: Built through the plugin's tools (LOOP.md rule 10). Headless: an officer's `event.create` appears on a member's client; the member's `event.signup` changes the role counts on the officer's; a sign-up naming another character is rejected; a member's `event.create` is rejected unless the setting allows it; cancelling hides the event; the login reminder lists events starting within 24 hours of virtual time. `wow_check` verdict `pass`. Full gate green.
-      Touches: `addons/Guildhall/Modules/Calendar.lua`, `addons/Guildhall/UI/TabCalendar.lua`, `addons/Guildhall/Guildhall.toc`, `addons/Guildhall/Tests/`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-043   Gated: none
 - [ ] T-021 — Guildhall Marks ledger
       Why: The internal currency is the owner's core ask; its arithmetic must be exact on every client (SPEC-GUILDHALL §7).
       Accept: Built through the plugin's tools (LOOP.md rule 10). Headless: claims with one dedupe key from at least half the named guildmates are approved with no officer; a lone claim waits and is approved by an officer's `marks.approve`; a second claim with the same key by the same author adds nothing; daily caps hold; `marks.spend` cannot take a balance below zero; a staked reward is refunded on cancel; five clients agree on every balance after sync; balances before and after a checkpoint are equal. `wow_check` verdict `pass`. Full gate green.
@@ -87,6 +83,10 @@
 ## Dropped
 
 ## Done
+- [x] T-020 — Guildhall Calendar: events and sign-ups (2026-11-11, this commit)
+      Why: Sign-ups are the most-used officer tool and half of the Discord round trip (SPEC-GUILDHALL §8.2).
+      Accept: Built through the plugin's tools (LOOP.md rule 10). Headless: an officer's `event.create` appears on a member's client; the member's `event.signup` changes the role counts on the officer's; a sign-up naming another character is rejected; a member's `event.create` is rejected unless the setting allows it; cancelling hides the event; the login reminder lists events starting within 24 hours of virtual time. `wow_check` verdict `pass`. Full gate green.
+      Touches: `addons/Guildhall/Modules/Calendar.lua`, `addons/Guildhall/UI/TabCalendar.lua`, `addons/Guildhall/Guildhall.toc`, `addons/Guildhall/Tests/`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-043   Gated: none
 - [x] T-043 — Guildhall Board (2026-11-11, this commit)
       Why: The first thing a member sees, and the demo's centre (SPEC-GUILDHALL §8.1).
       Accept: Built through the plugin's tools. Headless: posting through the Board's public function creates a `board.post` that a second client shows in its row model; pins sort first; `board.remove` by a non-author member is rejected; the Board tab builds only when first shown. `wow_check` and `wow_test` tool verdicts `pass`, quoted in the commit body. Full gate green.

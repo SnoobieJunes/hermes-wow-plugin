@@ -35,7 +35,7 @@ widget setter may hold the value. `issecretvalue` is true for that value. The st
 session and passes `wow_check` and `wow_test`; five simulated clients running it
 converge on one state. Its first feature module, the Board (officer posts, pins,
 comments, author/officer removal, a lazy tab), is in and proven headlessly; the
-remaining modules are still to come, and it has not been loaded in the live game client. Everything else below is
+remaining modules are still to come, and it has not been loaded in the live game client. The Calendar module (officer events openable to members, self-only role sign-ups with role counts, cancels, and a 24-hour login reminder) is likewise in and proven headlessly. Everything else below is
 planned, and nothing is claimed to work until its task is closed in `TASKS.md`.
 
 ## Why a plugin and not a prompt
