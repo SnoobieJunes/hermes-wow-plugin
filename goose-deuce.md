@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — sync wire gains a Codec payload form  [approach]
+- Task: T-047 (`docs/SPEC-GUILDHALL.md` §4–§5)
+- What: The sync block's `A`/`D` records keep the T-017 legacy form byte-identical when the payload is exactly `{who, n}`; any other payload rides as `A2,a,s,t,k,<Codec text>` / `D2,…` with the Codec output as the last field (commas inside it are safe, the chunker splits long texts). A payload the Codec cannot encode is never enqueued — it stays in the local log only, and that is stated at the author call site.
+- Why: Starting T-043 showed a `board.post` text cannot cross the T-017 wire form, which only carried `{who, n}`; SPEC-GUILDHALL §4 payloads are kind-specific plain data and §5's `A`/`D` carry "the record". One generic form was rejected: it would change every marks message byte and invalidate the T-017 convergence evidence for no benefit.
+- Where: `src/wow_addon_forge/blocks/sync/Core/Sync.lua` (`encode`, `apply_encoded`); the scaffolded Guildhall copy is refreshed by re-scaffolding under T-043.
+- Plan: goose-deuce.md 2026-11-11 "Sync wire prefix and message grammar" pinned the `{who, n}`-only grammar → the grammar now has two forms, pinned here. TASKS.md T-047 closed in this commit; T-043 depends on it. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — export sync layout and resource-list gap  [tech-debt]
 - Task: T-044 (`docs/SPEC-PLUGIN.md` §5 source 1)
 - What: `load_export_bundle` finds the documentation addon under `<flavor>/BlizzardInterfaceCode/Interface/AddOns/Blizzard_APIDocumentationGenerated` (the tree the Gethe mirror republishes), falling back to the addon folder directly under the export; the index build string is the install's `.build.info` version for that flavor. An export bundle carries no Ketho resource lists — including `LuaEnum.lua`, so a documentation file that reads `Enum.*` while building its table fails with a per-file warning in `build_index` (the same failure a mirror bundle missing that resource has today) — and the bundle's first warning says the lists are absent.

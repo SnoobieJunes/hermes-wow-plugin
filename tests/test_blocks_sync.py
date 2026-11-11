@@ -131,6 +131,51 @@ def test_five_clients_converge_under_loss(tmp_path: Path) -> None:
     shutil.rmtree(addon)
 
 
+def test_generic_payload_crosses_intact(tmp_path: Path) -> None:
+    # [2026-11-11 T-047] A board-style payload (text with commas, a boolean,
+    # and one long enough to chunk) must arrive intact on a second client;
+    # the T-017 wire form only carried {who, n}.
+    addon = _instantiate(tmp_path)
+    world = World(index=minimal_api_index(), rng_seed=47047)
+    ann = world.client("Ann", rank=2)
+    bob = world.client("Bob", rank=2)
+    ann.load_addon(addon)
+    bob.load_addon(addon)
+    long_text = "guild, hall " * 30
+    ann.run_lua(
+        "Sample.Sync.author({"
+        f'a="{ann.full_name}", s=1, t=1001, k="board.post", '
+        'p={text="hello, guild", pin=true}, v=1})'
+    )
+    ann.run_lua(
+        "Sample.Sync.author({"
+        f'a="{ann.full_name}", s=2, t=1002, k="board.post", '
+        f'p={{text="{long_text}"}}, v=1}})'
+    )
+    deadline = 180.0
+    got: list[str] = []
+    while world.elapsed < deadline:
+        world.advance(5)
+        got = [
+            str(
+                bob.run_lua(
+                    f'local r = Sample.Log.get(Sample.Sync.log, "{ann.full_name}", {seq}); '
+                    "return r ~= nil and r.p.text or ''"
+                )
+            )
+            for seq in (1, 2)
+        ]
+        if got == ["hello, guild", long_text]:
+            break
+    assert got == ["hello, guild", long_text], bob.run_lua("return Sample.Sync.report()")
+    pin = bob.run_lua(
+        f'local r = Sample.Log.get(Sample.Sync.log, "{ann.full_name}", 1); return r.p.pin'
+    )
+    assert pin is True
+    assert bob.errors == []
+    shutil.rmtree(addon)
+
+
 def test_core_log_sync_passes_wow_check(tmp_path: Path) -> None:
     addon = _instantiate(tmp_path)
     IndexStore(tmp_path / "index").save(minimal_api_index().data)

@@ -50,31 +50,76 @@ local function self_name()
     return name
 end
 
+-- [2026-11-11 T-047] Two wire forms. The legacy form (T-017 pin) carries
+-- exactly {who, n} and is unchanged. Any other payload (SPEC-GUILDHALL §4:
+-- kind-specific plain data, e.g. a board post's text) rides as
+-- "<kind>2,a,s,t,k,<Codec text>" with the Codec output as the last field, so
+-- commas inside it are safe; the chunker already splits long texts.
+local function is_legacy_payload(payload)
+    if type(payload) ~= "table" then
+        return false
+    end
+    if type(payload.who) ~= "string" or type(payload.n) ~= "number" then
+        return false
+    end
+    local keys = 0
+    for _ in pairs(payload) do
+        keys = keys + 1
+    end
+    return keys == 2
+end
+
 local function encode(kind, record)
-    return string.format(
-        "%s,%s,%d,%d,%s,%s,%d",
-        kind,
-        record.a,
-        record.s,
-        record.t,
-        record.k,
-        record.p.who,
-        record.p.n
-    )
+    if is_legacy_payload(record.p) then
+        return string.format(
+            "%s,%s,%d,%d,%s,%s,%d",
+            kind,
+            record.a,
+            record.s,
+            record.t,
+            record.k,
+            record.p.who,
+            record.p.n
+        )
+    end
+    if type(ns.Codec) ~= "table" or type(ns.Codec.encode) ~= "function" then
+        return nil
+    end
+    local payload = type(record.p) == "table" and record.p or {}
+    local encoded = ns.Codec.encode(payload)
+    if type(encoded) ~= "string" then
+        return nil
+    end
+    return string.format("%s2,%s,%d,%d,%s,%s", kind, record.a, record.s, record.t, record.k, encoded)
 end
 
 local function apply_encoded(text, sender)
     local kind, author, seq, time, record_kind, who, amount =
         text:match("^([AD]),([^,]+),(%d+),(%d+),([^,]+),([^,]+),(%d+)$")
-    if kind == nil then
-        return
+    local payload = nil
+    if kind ~= nil then
+        payload = { who = who, n = tonumber(amount) }
+    else
+        local encoded
+        kind, author, seq, time, record_kind, encoded =
+            text:match("^([AD])2,([^,]+),(%d+),(%d+),([^,]+),(.+)$")
+        if kind == nil then
+            return
+        end
+        if type(ns.Codec) ~= "table" or type(ns.Codec.decode) ~= "function" then
+            return
+        end
+        payload = ns.Codec.decode(encoded)
+        if type(payload) ~= "table" then
+            return
+        end
     end
     local record = {
         a = author,
         s = tonumber(seq),
         t = tonumber(time),
         k = record_kind,
-        p = { who = who, n = tonumber(amount) },
+        p = payload,
         v = 1,
     }
     if ns.Trust ~= nil and type(ns.Trust.receive) == "function" then
@@ -134,13 +179,21 @@ local function on_message(text, sender)
         for seq = tonumber(from_seq), tonumber(to_seq) do
             local record = ns.Log.get(ns.Sync.log, author, seq)
             if record ~= nil and type(record.p) == "table" then
-                ns.Throttle.enqueue(ns.Sync.throttle, encode("D", record), false)
-                return
+                local encoded = encode("D", record)
+                if encoded ~= nil then
+                    ns.Throttle.enqueue(ns.Sync.throttle, encoded, false)
+                    return
+                end
             end
         end
         return
     end
-    if text:sub(1, 2) == "A," or text:sub(1, 2) == "D," then
+    if
+        text:sub(1, 2) == "A,"
+        or text:sub(1, 2) == "D,"
+        or text:sub(1, 3) == "A2,"
+        or text:sub(1, 3) == "D2,"
+    then
         apply_encoded(text, sender)
     end
 end
@@ -184,8 +237,13 @@ end
 
 function ns.Sync.author(record)
     if ns.Log.apply(ns.Sync.log, record) then
-        ns.Sync.authored[#ns.Sync.authored + 1] = record
-        ns.Throttle.enqueue(ns.Sync.throttle, encode("A", record), true)
+        -- [2026-11-11 T-047] A payload the Codec cannot encode stays local:
+        -- it is in the log (Log.apply already happened) but never enqueued.
+        local encoded = encode("A", record)
+        if encoded ~= nil then
+            ns.Sync.authored[#ns.Sync.authored + 1] = record
+            ns.Throttle.enqueue(ns.Sync.throttle, encoded, true)
+        end
     end
     return ns.Sync.log.count
 end
@@ -217,7 +275,10 @@ function ns.Sync.tick()
     end
     ns.Sync.announce_i = (ns.Sync.announce_i % #ns.Sync.authored) + 1
     local record = ns.Sync.authored[ns.Sync.announce_i]
-    ns.Throttle.enqueue(ns.Sync.throttle, encode("A", record), true)
+    local encoded = encode("A", record)
+    if encoded ~= nil then
+        ns.Throttle.enqueue(ns.Sync.throttle, encoded, true)
+    end
     ns.Throttle.pump(ns.Sync.throttle, send, false)
 end
 

@@ -6,7 +6,7 @@
 - [ ] T-043 — Guildhall Board
       Why: The first thing a member sees, and the demo's centre (SPEC-GUILDHALL §8.1).
       Accept: Built through the plugin's tools. Headless: posting through the Board's public function creates a `board.post` that a second client shows in its row model; pins sort first; `board.remove` by a non-author member is rejected; the Board tab builds only when first shown. `wow_check` and `wow_test` tool verdicts `pass`, quoted in the commit body. Full gate green.
-      Touches: `addons/Guildhall/Modules/Board.lua`, `addons/Guildhall/UI/TabBoard.lua`, `addons/Guildhall/Guildhall.toc`, `addons/Guildhall/Tests/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-042   Gated: none
+      Touches: `addons/Guildhall/Modules/Board.lua`, `addons/Guildhall/UI/TabBoard.lua`, `addons/Guildhall/Guildhall.toc`, `addons/Guildhall/Tests/`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-042, T-047   Gated: none
 - [ ] T-020 — Guildhall Calendar: events and sign-ups
       Why: Sign-ups are the most-used officer tool and half of the Discord round trip (SPEC-GUILDHALL §8.2).
       Accept: Built through the plugin's tools (LOOP.md rule 10). Headless: an officer's `event.create` appears on a member's client; the member's `event.signup` changes the role counts on the officer's; a sign-up naming another character is rejected; a member's `event.create` is rejected unless the setting allows it; cancelling hides the event; the login reminder lists events starting within 24 hours of virtual time. `wow_check` verdict `pass`. Full gate green.
@@ -91,6 +91,10 @@
 ## Dropped
 
 ## Done
+- [x] T-047 — Carry generic record payloads on the sync wire (2026-11-11, this commit)
+      Why: The sync block's wire form only carries `{who, n}` payloads (the T-017 pin), so a `board.post` text cannot replicate — a missing plugin capability found while starting T-043 (LOOP.md rule 10). SPEC-GUILDHALL §4 payloads are kind-specific plain data and §5's `A`/`D` carry "the record".
+      Accept: A record whose payload is not exactly `{who, n}` crosses between two headless clients intact (text with commas, over 255 bytes chunked) via a Codec wire form; the legacy `{who, n}` form and the five-client convergence test are unchanged; a payload the Codec cannot encode is never enqueued. Full gate green.
+      Touches: `src/wow_addon_forge/blocks/sync/Core/Sync.lua`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-042   Gated: none
 - [x] T-042 — Guildhall, scaffolded by the plugin (2026-11-11, this commit)
       Why: The addon is the plugin's acceptance test; it starts from `wow_new`, not from hand-written files (LOOP.md rule 10).
       Accept: The T-003 stub under `addons/Guildhall` and its skeleton test are removed. `wow_new`, called as a tool in the session, creates `addons/Guildhall` with every block, name `Guildhall`, slash `/gh` and the Classic theme. `wow_check` and `wow_test`, called as tools, return `pass`, and their JSON summaries are quoted in the commit body. The five-client convergence test runs against the scaffolded addon. Full gate green.
