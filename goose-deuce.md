@@ -123,3 +123,27 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — Loop starts without the step-3 owner review  [decision]
+- Task: T-001, T-002 (NEW-PROJECT-GUIDE.md step 3, "Scaffold-A sessions stop here")
+- What: The task loop starts the night of 2026-11-11 straight after T-002's cold-clone gate, without waiting for the owner to review the seeded backlog.
+- Why: Owner instruction in the kickoff session ("set everything up following our procedures and get to work … in a loop while I sleep"). The hackathon closes 2026-11-11 14:00 PST and the owner is asleep for most of the remaining hours. The backlog was shown to the owner in that session's report.
+- Where: `TASKS.md` (T-002..T-038 seeded and immediately pickable), `scripts/` (the loop runner arrives with T-002).
+- Plan: The guide says a kickoff session stops after step 3 for owner review before any product code → the review is waived for this project by the owner; the board is reviewed in the morning instead. `docs/PLAN.md` is not falsified.
+- Commit(s): this commit
+
+## 2026-11-11 — Sweep cadence suspended until the hackathon deadline  [deferred]
+- Task: T-004 (AGENTS.md → Deviations, "every 10 closed tasks or weekly")
+- What: The standing sweep will not be promoted when the tenth task closes. T-004 is `Gated: owner` until 2026-11-11 14:00 PST.
+- Why: A sweep costs one to two loop iterations and the night has room for roughly thirty. The read-only review lane (LOOP.md rule 8) covers adversarial review continuously in the meantime. Owner priority is speed to the deadline.
+- Where: `TASKS.md` (T-004 moved to `Gated: owner` with the reason on the task).
+- Plan: AGENTS.md says the sweep runs every 10 closed tasks → deferred once, to after the deadline; the owing item is T-004. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
+## 2026-11-11 — Scaffold-time design calls: names, one runtime dependency, a review lane  [decision]
+- Task: T-000, T-001 (`docs/PLAN.md` §4, §6; `docs/SPEC-PLUGIN.md` §12; LOOP.md rule 8)
+- What: Four hard-to-reverse calls made while the owner was unavailable. (1) Names: plugin `wow-addon-forge`, tools prefixed `wow_`, guild addon `Guildhall` with `/gh`, currency "Marks", default theme Classic. (2) One runtime dependency, `lupa>=2.1,<3`, for an embedded Lua 5.1 VM. (3) LOOP.md gained two repo-specific rules beyond the template: a read-only review lane that writes to `.review/` and never commits, and "nothing about the live client is claimed from a headless run". (4) The plugin and the addon live in one repository so the catalog pin covers both.
+- Why: (1) The owner asked for both specs and a running loop the same night; names are cheap to change before the first push and are listed here so they can be. (2) The system `lua` is 5.5 and cannot check Lua 5.1 code; `lupa` (MIT, bundles Lua 5.1; `lupa.lua51` verified importable under Python 3.12 and 3.14 on this machine) is what turns the checks from described into executed. (3) A second model family reviewing continuously, with no write access to the tree, adds review without merge risk. (4) One pin, one validation gate.
+- Where: `AGENTS.md` (snapshot), `LOOP.md` (rules 8–9), `HERMES-OVERLAY.md` (addition 6), `docs/PLAN.md`, `docs/SPEC-PLUGIN.md`, `docs/SPEC-GUILDHALL.md`.
+- Plan: Plan silence on names and on a dependency policy beyond AGENTS.md's "a dependency is a task of its own" → recorded here as decisions; the dependency itself is added and locked in T-002, whose Accept names it. `docs/PLAN.md` states all four.
+- Commit(s): this commit
+
