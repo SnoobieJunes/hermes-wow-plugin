@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-006 — Lua 5.1 static analysis and TOC lint
-      Why: Syntax and name errors must be caught before anything runs (SPEC-PLUGIN §4 stages 1–3).
-      Accept: Tests prove: a file using `goto` or `//` fails with code `syntax` and its line; global reads and writes of a fixture are listed with lines; `C_Item.GetItemInfo(x)` is reported as member access `C_Item.GetItemInfo`; `local CI = C_Item` is reported as a read of `C_Item`; TOC parsing returns the Interface list, the SavedVariables names and the file list, and flags a listed file that does not exist. Full gate green.
-      Touches: `src/wow_addon_forge/luacheck.py`, `src/wow_addon_forge/tocfile.py`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-003   Gated: none
 - [ ] T-007 — Headless runtime: the strict stub of the game
       Why: "It runs" has to be executed, not asserted (SPEC-PLUGIN §6); it is also what lets a loop test Guildhall without the client.
       Accept: Tests prove: two simulated clients load a fixture addon; a guild addon message fires `CHAT_MSG_ADDON` on the other client only if it registered the prefix, with sender `Name-Realm`; a 256-byte message is refused; the 11th message inside one second returns the throttle result; reading an unknown `C_` member raises an error naming it; `RegisterEvent` of an unknown event raises; timers fire in order under `world.advance`; SavedVariables survive `client.reload()`; an active restriction regime turns a send into a refused call. Full gate green.
@@ -167,6 +163,10 @@
 ## Dropped
 
 ## Done
+- [x] T-006 — Lua 5.1 static analysis and TOC lint (2026-11-11, this commit)
+      Why: Syntax and name errors must be caught before anything runs (SPEC-PLUGIN §4 stages 1–3).
+      Accept: Tests prove: a file using `goto` or `//` fails with code `syntax` and its line; global reads and writes of a fixture are listed with lines; `C_Item.GetItemInfo(x)` is reported as member access `C_Item.GetItemInfo`; `local CI = C_Item` is reported as a read of `C_Item`; TOC parsing returns the Interface list, the SavedVariables names and the file list, and flags a listed file that does not exist. Full gate green.
+      Touches: `src/wow_addon_forge/luacheck.py`, `src/wow_addon_forge/tocfile.py`, `tests/`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-003   Gated: none
 - [x] T-005 — Build the API index and the `wow_api` tool (2026-11-11, this commit)
       Why: Every other check needs one queryable truth for what exists in the user's client build (SPEC-PLUGIN §5).
       Accept: Unit tests over a small hand-written fixture in Blizzard's documentation-table format (no Blizzard source committed) prove functions, events and enums are indexed with `restricted`, `secret` and `deprecated` fields, and that `lookup` of a missing name returns `unknown` with nearest matches. One live run, its output recorded in the commit body: `uv run python -m wow_addon_forge api sync --flavor forever` then `api status` prints build `1.60.1` with more than 4000 functions and more than 1200 events; `api lookup C_ChatInfo.SendAddonMessage` shows four arguments; `api lookup GetItemInfo` reports it is not a C API function and names `C_Item.GetItemInfo`; `api lookup COMBAT_LOG_EVENT_UNFILTERED` prints the restriction flags read from the documentation. `wow_api` is registered and `hermes plugins validate .` passes. Full gate green.

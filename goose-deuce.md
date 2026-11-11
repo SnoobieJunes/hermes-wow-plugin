@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — TOC lint codes, Tests/ pruning, and Lua 5.1 bytecode global-access contract  [decision]
+- Task: T-006 (`docs/SPEC-PLUGIN.md` §4 stages 1–3)
+- What: Three public contracts pinned for `wow_check` (T-008) and addon scaffolding (T-011): (1) `tocfile.Finding` (`{severity, code, file, line, message, hint}`) is the single finding type shared across checkers, and `lint_toc` emits codes `toc-name-mismatch`, `toc-interface`, `invalid-savedvar`, `invalid-file-path`, `missing-file` (all `error`) and `unlisted-file` (`warning`), pruning dot-folders and `Tests/` / `tests/` during the unlisted-Lua scan because `wow_test` test files are never listed in an addon TOC. (2) `luacheck` transfers `string.dump` bytecode across the `lupa` boundary as hex (raw bytes >= `0x80` fail `lupa`'s UTF-8 string decoder) and parses the Lua 5.1 `lundump.c` binary chunk directly. (3) `GETGLOBAL` folds with an immediate string-constant `GETTABLE` or `SELF` into `kind="member"` (`C_Item.GetItemInfo`) only when the target register is an expression temporary (`not starts_local and a >= active_locals` from `proto.locvars`), keeping `local CI = C_Item` and `local x; x = C_Item` as bare `kind="read"` accesses.
+- Why: SPEC-PLUGIN §4 stages 1–3 describe the rules without naming the TOC finding codes, how `Tests/` interacts with unlisted-file warnings, or how Lua 5.1 bytecode separates `C_Item.GetItemInfo(x)` from `local CI = C_Item`. Verifying `lupa.lua51`'s `locvars` layout against `ldebug.c` (`luaF_getlocalname`) caught local-reassignment register reuse (`x = C_Item`) as well as new-local declarations.
+- Where: `src/wow_addon_forge/tocfile.py`, `src/wow_addon_forge/luacheck.py`, `tests/test_tocfile.py`, `tests/test_luacheck.py`.
+- Plan: SPEC-PLUGIN §4 stages 1–3 left TOC error codes and the `Tests/` folder exemption unspecified → pinned here. TASKS.md updated in this commit (`goose-deuce.md` added to T-006 Touches). `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — wow_api sync reads the mirrors only  [deferred]
 - Task: T-005 (`docs/SPEC-PLUGIN.md` §5 source 1; §3 `wow_api` row)
 - What: `wow_api` with `action="sync"` builds the index from the public GitHub mirrors (`Gethe/wow-ui-source` and `Ketho/BlizzardInterfaceResources`). Passing `source="export"` returns an explicit `export-not-supported` error without touching the network or disk, and `source="auto"` (the default) uses the mirrors and includes a `note` saying local export reading is not yet supported. Local `<flavor>/BlizzardInterfaceCode` support is filed as T-044 in `## Later`.
