@@ -424,6 +424,13 @@ WOW_NEW_SCHEMA: dict[str, Any] = {
                 "type": "string",
                 "description": "Addon folder to create. Refused when it already has files.",
             },
+            "slash": {
+                "type": "string",
+                "description": (
+                    "Optional slash command to register, for example /gh. Default: / plus "
+                    "the lowercased addon name. Lowercased before use."
+                ),
+            },
         },
         "required": ["name", "title", "modules", "dest"],
         "additionalProperties": False,
@@ -1412,7 +1419,7 @@ class ForgeTools:
 
         Why this exists: scaffolding is the one write that creates an addon, so the
             refusal of a non-empty dest lives in one result the handler and tests share.
-        Args: ``name``, ``title``, ``modules``, ``dest``.
+        Args: ``name``, ``title``, ``modules``, ``dest``, optional ``slash``.
         Returns: ``{"ok": True, addon, path, modules, slash, files}`` or an error result.
         Failure modes: never raises.
         """
@@ -1426,6 +1433,7 @@ class ForgeTools:
         title = args.get("title")
         modules = args.get("modules")
         dest = args.get("dest")
+        slash = args.get("slash")
         if not isinstance(name, str) or not name.strip():
             return error_result(
                 "bad-argument",
@@ -1450,12 +1458,21 @@ class ForgeTools:
                 "wow_new needs dest: the addon folder to create",
                 _NEW_CALL_HINT,
             )
+        # [2026-11-11 T-046] Type is checked here (bad-argument, like every other
+        # argument); the pattern itself is scaffold_addon's bad-slash refusal.
+        if slash is not None and not isinstance(slash, str):
+            return error_result(
+                "bad-argument",
+                f"slash must be a string like /gh, got {type(slash).__name__}",
+                _NEW_CALL_HINT,
+            )
         try:
             report = scaffold_addon(
                 name=name.strip(),
                 title=title,
                 modules=modules,
                 dest=dest.strip(),
+                slash=slash.strip() if isinstance(slash, str) else None,
             )
         except ScaffoldError as exc:
             return error_result(exc.code, exc.message, exc.hint)

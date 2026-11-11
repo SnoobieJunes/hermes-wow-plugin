@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-046 — Add an optional slash command to `wow_new`
-      Why: T-042 requires Guildhall's slash to be `/gh`, but the scaffold derives `/guildhall` from the addon name and `wow_new` has no slash parameter — a missing plugin capability found before the addon task could start (LOOP.md rule 10).
-      Accept: `wow_new` accepts an optional `slash` (default `/` + lowercased name); a scaffold created with `slash="/gh"` registers `/gh` headless (its bundled test asserts `/gh`), invalid slash values are refused with a stable error, and existing default-slash scaffolds are unchanged. Full gate green.
-      Touches: `src/wow_addon_forge/scaffold.py`, `src/wow_addon_forge/tools.py`, `src/wow_addon_forge/blocks/core/Core/Slash.lua`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-041   Gated: none
 - [ ] T-042 — Guildhall, scaffolded by the plugin
       Why: The addon is the plugin's acceptance test; it starts from `wow_new`, not from hand-written files (LOOP.md rule 10).
       Accept: The T-003 stub under `addons/Guildhall` and its skeleton test are removed. `wow_new`, called as a tool in the session, creates `addons/Guildhall` with every block, name `Guildhall`, slash `/gh` and the Classic theme. `wow_check` and `wow_test`, called as tools, return `pass`, and their JSON summaries are quoted in the commit body. The five-client convergence test runs against the scaffolded addon. Full gate green.
@@ -99,6 +95,10 @@
 ## Dropped
 
 ## Done
+- [x] T-046 — Add an optional slash command to `wow_new` (2026-11-11, this commit)
+      Why: T-042 requires Guildhall's slash to be `/gh`, but the scaffold derives `/guildhall` from the addon name and `wow_new` has no slash parameter — a missing plugin capability found before the addon task could start (LOOP.md rule 10).
+      Accept: `wow_new` accepts an optional `slash` (default `/` + lowercased name); a scaffold created with `slash="/gh"` registers `/gh` headless (its bundled test asserts `/gh`), invalid slash values are refused with a stable error, and existing default-slash scaffolds are unchanged. Full gate green.
+      Touches: `src/wow_addon_forge/scaffold.py`, `src/wow_addon_forge/tools.py`, `src/wow_addon_forge/blocks/core/Core/Slash.lua`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-041   Gated: none
 - [x] T-041 — The plugin-done gate: build a throwaway addon end to end through the enabled plugin (2026-11-11, this commit)
       Why: Owner rule: no addon work starts until the plugin is finished and proven by use (PLAN §5).
       Accept: Every tool in SPEC-PLUGIN §3 is registered and `hermes plugins validate . --install-deps` passes. `hermes plugins list` shows `wow-addon-forge` enabled (it is already linked to this repo). A fresh Hermes session started in a scratch directory with the `wow-addon-builder` skill builds a throwaway addon using only the plugin's tools: `wow_env` and `wow_install` against a temporary fake install, `wow_api` against the live index, `wow_new`, `wow_check` with verdict `pass`, `wow_test`, `wow_savedvars` and `wow_errors` on fixtures, and `wow_bridge` pull and push. That session's tool calls and verdicts are saved under `docs/gate/` and summarised in the commit body. Every defect found is fixed in the plugin first and the gate is re-run from a fresh session until it passes clean. Full gate green.

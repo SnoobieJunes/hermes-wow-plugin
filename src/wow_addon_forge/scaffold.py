@@ -4,7 +4,9 @@ Invariants owned by this file:
 - A scaffold writes only inside ``dest``. A dest that already has entries is refused
   before any write.
 - The addon name becomes a Lua global, so it must be a Lua identifier. The token
-  ``@@ADDON@@`` in every copied file is replaced with that name.
+  ``@@ADDON@@`` in every copied file is replaced with that name, and ``@@SLASH@@``
+  with the resolved slash command ([2026-11-11 T-046]; default ``/`` + lowercased
+  name, or the caller's validated ``slash``).
 - Modules are emitted in block order (core, log, sync, trust, window, bridge), and a
   requested module pulls in the blocks it calls. ``core`` is always included.
 """
@@ -16,7 +18,9 @@ import re
 from pathlib import Path
 
 TOKEN = "@@ADDON@@"
+SLASH_TOKEN = "@@SLASH@@"
 _NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_SLASH_RE = re.compile(r"^/[A-Za-z][A-Za-z0-9_]*$")
 _ORDER = ("core", "log", "sync", "trust", "window", "bridge")
 _NEEDS = {
     "core": (),
@@ -86,8 +90,7 @@ def _module_copies(module: str) -> list[tuple[Path, str]]:
     return [(_BLOCKS / module / source, dest) for source, dest in _EXTRA_FILES[module]]
 
 
-def _tests_lua(name: str, modules: set[str]) -> str:
-    slash = "/" + name.lower()
+def _tests_lua(name: str, modules: set[str], slash: str) -> str:
     key = "SLASH_" + name.upper() + "1"
     lines = [
         "-- Bundled scaffold checks for " + name + " (created 2026-11-11).",
@@ -130,23 +133,37 @@ def scaffold_addon(
     title: str,
     modules: list[str],
     dest: str | os.PathLike[str],
+    slash: str | None = None,
 ) -> dict[str, object]:
     """Copy the named building blocks into ``dest`` and write its TOC.
 
     Why this exists: ``wow_new`` is how an addon starts from code that already
         passes, instead of from an empty file (SPEC-PLUGIN §3, §8).
     Args: name, the addon folder and Lua global; title, the TOC title; modules,
-        block names; dest, the addon folder to create or fill.
+        block names; dest, the addon folder to create or fill; slash, the slash
+        command to register ([2026-11-11 T-046] Guildhall needs ``/gh``, not the
+        name-derived default); ``None`` keeps ``/`` + the lowercased name. A
+        given slash is lowercased, matching how the client treats commands.
     Returns: ``addon``, ``path``, ``modules`` (resolved order), ``slash``, ``files``.
-    Failure modes: ``ScaffoldError`` for a bad name, unknown module, a ``..`` dest,
-        a dest that is a file, or a dest that already has entries. Nothing is
-        written in those cases.
+    Failure modes: ``ScaffoldError`` for a bad name, a bad slash, an unknown
+        module, a ``..`` dest, a dest that is a file, or a dest that already has
+        entries. Nothing is written in those cases.
     """
     if not _NAME_RE.fullmatch(name):
         raise ScaffoldError(
             "bad-name",
             f"Addon name {name!r} is not a Lua identifier.",
             "Use a name of letters, digits and underscores, starting with a letter.",
+        )
+    if slash is None:
+        resolved_slash = "/" + name.lower()
+    elif _SLASH_RE.fullmatch(slash):
+        resolved_slash = slash.lower()
+    else:
+        raise ScaffoldError(
+            "bad-slash",
+            f"Slash command {slash!r} is not a slash command.",
+            "Use a slash like /gh: /, then a letter, then letters, digits or underscores.",
         )
     unknown = [item for item in modules if item not in _NEEDS]
     if unknown:
@@ -212,7 +229,11 @@ def scaffold_addon(
     for source, relative in copies:
         target = dest_path / relative
         target.parent.mkdir(parents=True, exist_ok=True)
-        text = source.read_text(encoding="utf-8").replace(TOKEN, name)
+        text = (
+            source.read_text(encoding="utf-8")
+            .replace(TOKEN, name)
+            .replace(SLASH_TOKEN, resolved_slash)
+        )
         target.write_text(text, encoding="utf-8")
         written.append(relative)
     toc_name = f"{name}.toc"
@@ -221,12 +242,12 @@ def scaffold_addon(
     tests_rel = "Tests/scaffold.lua"
     tests_path = dest_path / tests_rel
     tests_path.parent.mkdir(parents=True, exist_ok=True)
-    tests_path.write_text(_tests_lua(name, set(resolved)), encoding="utf-8")
+    tests_path.write_text(_tests_lua(name, set(resolved), resolved_slash), encoding="utf-8")
     written.append(tests_rel)
     return {
         "addon": name,
         "path": str(dest_path),
         "modules": resolved,
-        "slash": "/" + name.lower(),
+        "slash": resolved_slash,
         "files": written,
     }

@@ -100,6 +100,70 @@ def test_non_empty_dest_is_refused(tmp_path: Path) -> None:
     assert not (dest / "Sample.toc").exists()
 
 
+def test_custom_slash_registers_and_passes(tmp_path: Path) -> None:
+    # [2026-11-11 T-046] Guildhall needs /gh, not the name-derived slash.
+    tools = _tools(tmp_path)
+    dest = tmp_path / "Probe"
+    created = json.loads(
+        tools.handle_new(
+            {
+                "name": "Probe",
+                "title": "Probe",
+                "modules": EVERY,
+                "dest": str(dest),
+                "slash": "/GH",
+            }
+        )
+    )
+    assert created["ok"] is True, created
+    assert created["slash"] == "/gh"
+    slash_lua = (dest / "Core" / "Slash.lua").read_text(encoding="utf-8")
+    assert '"/gh"' in slash_lua
+    assert "@@SLASH@@" not in slash_lua
+    world = World(index=minimal_api_index(), rng_seed=46046)
+    client = world.client("Ann", rank=2)
+    client.load_addon(dest)
+    assert client.errors == []
+    assert "/gh" in client.registered_slash_commands()
+    assert "/probe" not in client.registered_slash_commands()
+    tested = json.loads(tools.handle_test({"path": str(dest)}))
+    assert tested["ok"] is True and tested["verdict"] == "pass", tested
+    shutil.rmtree(dest)
+
+
+def test_invalid_slash_is_refused(tmp_path: Path) -> None:
+    tools = _tools(tmp_path)
+    for index, bad in enumerate(("gh", "/", "/g h", "/gh!", "")):
+        dest = tmp_path / f"Bad{index}"
+        refused = json.loads(
+            tools.handle_new(
+                {
+                    "name": "Bad",
+                    "title": "Bad",
+                    "modules": ["core"],
+                    "dest": str(dest),
+                    "slash": bad,
+                }
+            )
+        )
+        assert refused["ok"] is False, (bad, refused)
+        assert refused["error"]["code"] == "bad-slash", (bad, refused)
+        assert not dest.exists(), bad
+    not_text = json.loads(
+        tools.handle_new(
+            {
+                "name": "Bad",
+                "title": "Bad",
+                "modules": ["core"],
+                "dest": str(tmp_path / "BadType"),
+                "slash": 7,
+            }
+        )
+    )
+    assert not_text["ok"] is False
+    assert not_text["error"]["code"] == "bad-argument"
+
+
 def test_wow_new_is_registered() -> None:
     ctx = _Ctx()
     registered = register_tools(ctx)

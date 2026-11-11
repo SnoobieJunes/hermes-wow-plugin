@@ -1,5 +1,6 @@
 -- Slash commands for @@ADDON@@ (created 2026-11-11).
--- Purpose: register /<addon> under the instantiated addon's name.
+-- Purpose: register the addon's slash command (@@SLASH@@, stamped by wow_new;
+-- [2026-11-11 T-046] an unstamped copy falls back to /<addon>).
 -- Invariant: an empty argument does not error. wow_check invokes every slash that way.
 
 local ADDON_NAME, ns = ...
@@ -17,7 +18,10 @@ local function handle(msg)
 end
 
 local key = string.upper(ADDON_NAME or "@@ADDON@@")
-local token = "/" .. string.lower(ADDON_NAME or "@@ADDON@@")
+local token = "@@SLASH@@"
+if token:sub(1, 2) == "@@" then
+    token = "/" .. string.lower(ADDON_NAME or "@@ADDON@@")
+end
 _G["SLASH_" .. key .. "1"] = token
 SlashCmdList[key] = handle
 ns.Slash.key = key
