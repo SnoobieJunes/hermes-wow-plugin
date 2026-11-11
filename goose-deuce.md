@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — Log reducer kinds and state hash  [decision]
+- Task: T-016 (`docs/SPEC-GUILDHALL.md` §4)
+- What: The log block reduces three kinds: `marks.credit` and `marks.debit` sum `p.n` into `p.who`, and `log.checkpoint` replaces balances with `p.balances` then allows compaction of records older than `p.cutoff`. Any other kind is stored and not folded. The state hash is sorted `who=amount` pairs joined by `|`.
+- Why: SPEC-GUILDHALL §4 says balances are sums and a checkpoint carries derived balances, and does not name the ledger kinds or the hash. Sync and Marks will call these kinds; a second spelling would fork the log.
+- Where: `src/wow_addon_forge/blocks/log/Core/Reduce.lua`.
+- Plan: SPEC-GUILDHALL §4 left the kind names and hash form unspecified → pinned here. TASKS.md T-016 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — Core block token and codec text form  [decision]
 - Task: T-015 (`docs/SPEC-PLUGIN.md` §8)
 - What: The addon-name token in `src/wow_addon_forge/blocks/core/` is the literal `@@ADDON@@`. The codec is a tagged text form (booleans, integers, IEEE-754 hex floats, hex strings, tables). Decode parses that text and does not execute it. Numeric table keys are encoded with a `#` prefix so they survive as numbers.

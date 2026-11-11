@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-016 — Building block `log`: the replicated record log and reducers
-      Why: One replicated log is the whole data model; convergence depends on it being order-independent (SPEC-GUILDHALL §4).
-      Accept: Lua tests prove: applying the same 300 generated records in 50 shuffled orders yields one state hash; a duplicate record is a no-op; an unknown kind is stored but not reduced; a checkpoint followed by compaction leaves derived balances unchanged. An addon instantiated from `core` + `log` gets `wow_check` verdict `pass`. Full gate green.
-      Touches: `src/wow_addon_forge/blocks/log/`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-015   Gated: none
 - [ ] T-017 — Building block `sync`: chunker, throttle, restriction queue, protocol
       Why: Guildmates must converge without a server, inside the client's message limits (SPEC-GUILDHALL §5).
       Accept: Headless simulation on an addon instantiated from the blocks: 5 clients, 200 records authored across them, 30% loss with reordering and duplication, one client joining late — all five reach one state hash within 10 simulated minutes; no message exceeds 255 bytes; no client sustains more than 1 message per second; nothing is sent while a restriction is active and the queue flushes when it lifts. `wow_check` verdict `pass`. Full gate green.
@@ -139,6 +135,10 @@
 ## Dropped
 
 ## Done
+- [x] T-016 — Building block `log`: the replicated record log and reducers (2026-11-11, this commit)
+      Why: One replicated log is the whole data model; convergence depends on it being order-independent (SPEC-GUILDHALL §4).
+      Accept: Lua tests prove: applying the same 300 generated records in 50 shuffled orders yields one state hash; a duplicate record is a no-op; an unknown kind is stored but not reduced; a checkpoint followed by compaction leaves derived balances unchanged. An addon instantiated from `core` + `log` gets `wow_check` verdict `pass`. Full gate green.
+      Touches: `src/wow_addon_forge/blocks/log/`, `tests/`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-015   Gated: none
 - [x] T-015 — Building block `core`: namespace, dispatcher, clock, store, codec, slash (2026-11-11, this commit)
       Why: Every addon the plugin scaffolds stands on these, Guildhall first (SPEC-PLUGIN §8, SPEC-GUILDHALL §3).
       Accept: The block is Lua templates with an addon-name token under `src/wow_addon_forge/blocks/core/`. Lua tests run by pytest prove: the codec round-trips 500 random nested tables (strings with every byte 1–255, integers, floats, booleans), its output never contains byte 0, and 200 mutated inputs are rejected by returning nil plus a message, never by raising; the store migrates a version-1 fixture; the slash command registers under the instantiated addon's name. An addon instantiated from the block gets `wow_check` verdict `pass`. Full gate green.
