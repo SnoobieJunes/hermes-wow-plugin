@@ -81,10 +81,10 @@
       Why: A guild picks its look together (SPEC-GUILDHALL §8.13).
       Accept: Headless: a member proposes a design; each member holds one live vote that a later vote replaces; the tally is identical on five clients. `wow_check` verdict `pass`. Full gate green.
       Touches: `addons/Guildhall/Modules/Tabard.lua`, `addons/Guildhall/UI/TabTabard.lua`, `addons/Guildhall/Guildhall.toc`, `addons/Guildhall/Tests/`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-019   Gated: none
-- [ ] T-044 — Support local `BlizzardInterfaceCode` client exports in `wow_api sync`
-      Why: SPEC-PLUGIN §5 lists `<flavor>/BlizzardInterfaceCode` (produced by `ExportInterfaceFiles code`) ahead of the public mirrors when present on disk; deferred from T-005 until an export folder layout is verified.
-      Accept: Unit tests against a fake install holding `<flavor>/BlizzardInterfaceCode` prove `wow_api` with `source="export"` and `source="auto"` indexes the local export with zero network calls, and falls back to the mirror under `auto` (saying so in `note`) when no export folder is present. Full gate green.
-      Touches: `src/wow_addon_forge/apidocs.py`, `src/wow_addon_forge/tools.py`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-005, T-039   Gated: none
+- [ ] T-045 — Verify export sync against a real Forever `BlizzardInterfaceCode` export
+      Why: T-044's export sub-layout is the Gethe mirror's tree, proven against fake installs only, and documentation files that read `Enum.*` at load time fail without a `LuaEnum.lua` (goose-deuce.md 2026-11-11 "export sync layout and resource-list gap").
+      Accept: The owner runs `ExportInterfaceFiles code` in the live client; `wow_api` with `source="export"` against that tree returns `source: export` with function/event counts comparable to a mirror sync of the same build, its warnings are pasted into this task, and every layout or Enum gap found becomes a plugin fix or a new task. Full gate green.
+      Touches: `src/wow_addon_forge/apidocs.py`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-044   Gated: owner
 - [ ] T-004 — Run standing goose-deuce sweep #1
       Why: Keep `docs/PLAN.md`, `TASKS.md`, `AGENTS.md` and `goose-deuce.md` aligned. The cadence is suspended until the hackathon deadline (goose-deuce.md 2026-11-11 "Sweep cadence suspended until the hackathon deadline"); the owner releases this task after 2026-11-11 14:00 PST.
       Accept: Every pending `Plan:` adjustment is folded into `docs/PLAN.md`; no orphaned `[deferred]` or `[tech-debt]` entry; the stranger test passes.
@@ -99,6 +99,10 @@
 ## Dropped
 
 ## Done
+- [x] T-044 — Support local `BlizzardInterfaceCode` client exports in `wow_api sync` (2026-11-11, this commit)
+      Why: SPEC-PLUGIN §5 lists `<flavor>/BlizzardInterfaceCode` (produced by `ExportInterfaceFiles code`) ahead of the public mirrors when present on disk; deferred from T-005 until an export folder layout is verified.
+      Accept: Unit tests against a fake install holding `<flavor>/BlizzardInterfaceCode` prove `wow_api` with `source="export"` and `source="auto"` indexes the local export with zero network calls, and falls back to the mirror under `auto` (saying so in `note`) when no export folder is present. Full gate green.
+      Touches: `src/wow_addon_forge/apidocs.py`, `src/wow_addon_forge/tools.py`, `tests/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-005, T-039   Gated: none
 - [x] T-034 — Secret-value simulation in the headless runtime (2026-11-11, this commit)
       Why: Code that works out of combat and errors in combat is the failure the static rule cannot fully see (SPEC-PLUGIN §6).
       Accept: With a restriction regime active, documented secret-returning functions return an opaque value; arithmetic, comparison or concatenation on it raises a `secret-value` finding with file and line; passing it to a widget setter does not; Guildhall and ForgeProbe stay at verdict `pass`. Full gate green.

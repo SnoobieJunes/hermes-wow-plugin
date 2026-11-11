@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from conftest import MAC_ROOT, FakeFileSystem, forever_install_files
 
 from wow_addon_forge import luavm
 from wow_addon_forge.apidocs import (
@@ -30,6 +31,7 @@ from wow_addon_forge.apidocs import (
     build_index,
     default_cache_dir,
     fetch_mirror_bundle,
+    load_export_bundle,
     normalise_flavor,
 )
 from wow_addon_forge.luavm import LuaChunkError
@@ -145,6 +147,48 @@ APIDocumentation:AddDocumentationTable({
 """
 
 BROKEN_DOC = "local x = 7 // 2\n"
+
+# [2026-11-11 T-044] The export fixture doc reads no Enum.* value while building its
+# table: a client export carries no LuaEnum.lua resource, so an Enum-reading file
+# would fail in build_index with a warning (the limitation T-045 verifies for real).
+FORGE_EXPORT_DOC = """
+APIDocumentation:AddDocumentationTable({
+    Name = "ForgeExport",
+    Type = "System",
+    Namespace = "C_ForgeExport",
+    Functions = {
+        {
+            Name = "SendExportPing",
+            Type = "Function",
+            Arguments = {
+                { Name = "message", Type = "string" },
+            },
+            Returns = {
+                { Name = "sent", Type = "bool" },
+            },
+        },
+    },
+    Events = {},
+    Tables = {},
+})
+"""
+
+_EXPORT_TOC = "## Interface: 16001\nForgeExportDocumentation.lua\nForgeFrameAPIDocumentation.lua\n"
+
+EXPORT_DOC_DIR = (
+    f"{MAC_ROOT}/_forever_/BlizzardInterfaceCode"
+    "/Interface/AddOns/Blizzard_APIDocumentationGenerated"
+)
+
+
+def fixture_export_files() -> dict[str, str]:
+    """Return a fake install whose ``_forever_`` flavor holds a client export."""
+    files = forever_install_files()
+    files[f"{EXPORT_DOC_DIR}/Blizzard_APIDocumentationGenerated.toc"] = _EXPORT_TOC
+    files[f"{EXPORT_DOC_DIR}/ForgeExportDocumentation.lua"] = FORGE_EXPORT_DOC
+    files[f"{EXPORT_DOC_DIR}/ForgeFrameAPIDocumentation.lua"] = FORGE_FRAME_DOC
+    return files
+
 
 _DOCUMENTATION: dict[str, str] = {
     "ForgeChatDocumentation.lua": FORGE_CHAT_DOC,
@@ -718,3 +762,63 @@ APIDocumentation:AddDocumentationTable({})
     assert data["warnings"] == [
         "Skipped malformed documentation table without Name or declarations."
     ]
+
+
+def test_y_export_bundle_indexes_local_docs() -> None:
+    """Y: a fake install's BlizzardInterfaceCode export becomes an export bundle."""
+    bundle = load_export_bundle(FakeFileSystem(fixture_export_files()), None, "forever")
+    assert bundle is not None
+    assert bundle.source == "export"
+    assert bundle.build == "1.60.1.70888"
+    assert sorted(bundle.documentation) == [
+        "ForgeExportDocumentation.lua",
+        "ForgeFrameAPIDocumentation.lua",
+    ]
+    assert bundle.resources == {}
+    assert bundle.origin.endswith("BlizzardInterfaceCode")
+    data = build_index(bundle, generated_at=GENERATED_AT)
+    assert data["source"] == "export"
+    ping = entry(data, "function", "C_ForgeExport.SendExportPing")
+    assert [arg["name"] for arg in ping["args"]] == ["message"]
+    assert any("LuaEnum.lua" in warning for warning in data["warnings"])
+
+
+def test_z_export_bundle_absent_and_broken() -> None:
+    """Z: no export folder gives None; a folder without the doc TOC is bad-export-data."""
+    assert load_export_bundle(FakeFileSystem(forever_install_files()), None, "forever") is None
+    assert load_export_bundle(FakeFileSystem({}), None, "forever") is None
+    broken = forever_install_files()
+    broken[f"{MAC_ROOT}/_forever_/BlizzardInterfaceCode/readme.txt"] = "exported\n"
+    with pytest.raises(ApiIndexError) as raised:
+        load_export_bundle(FakeFileSystem(broken), None, "forever")
+    assert raised.value.code == "bad-export-data"
+
+
+def test_zb_export_flat_layout_and_unknown_build() -> None:
+    """ZB: the flat doc-addon layout loads; an unknown client version is bad-export-data."""
+    flat_dir = f"{MAC_ROOT}/_forever_/BlizzardInterfaceCode/Blizzard_APIDocumentationGenerated"
+    flat = forever_install_files()
+    flat[f"{flat_dir}/Blizzard_APIDocumentationGenerated.toc"] = _EXPORT_TOC
+    flat[f"{flat_dir}/ForgeExportDocumentation.lua"] = FORGE_EXPORT_DOC
+    flat[f"{flat_dir}/ForgeFrameAPIDocumentation.lua"] = FORGE_FRAME_DOC
+    bundle = load_export_bundle(FakeFileSystem(flat), None, "forever")
+    assert bundle is not None
+    assert bundle.build == "1.60.1.70888"
+    no_build = fixture_export_files()
+    del no_build[f"{MAC_ROOT}/.build.info"]
+    with pytest.raises(ApiIndexError) as raised:
+        load_export_bundle(FakeFileSystem(no_build), None, "forever")
+    assert raised.value.code == "bad-export-data"
+
+
+def test_za_export_toc_refuses_escaping_file_names() -> None:
+    """ZA: an export TOC entry escaping the doc folder is refused and warned, not read."""
+    files = fixture_export_files()
+    files[f"{EXPORT_DOC_DIR}/Blizzard_APIDocumentationGenerated.toc"] = (
+        "## Interface: 16001\n../Evil.lua\nForgeExportDocumentation.lua\n"
+    )
+    files[f"{MAC_ROOT}/_forever_/BlizzardInterfaceCode/Interface/AddOns/Evil.lua"] = "-- evil\n"
+    bundle = load_export_bundle(FakeFileSystem(files), None, "forever")
+    assert bundle is not None
+    assert sorted(bundle.documentation) == ["ForgeExportDocumentation.lua"]
+    assert any("Evil.lua" in warning for warning in bundle.warnings)

@@ -5,6 +5,8 @@ Invariants owned by this file:
 - ``fetch_mirror_bundle`` is the plugin's only network path, and it only fetches
   ``https://raw.githubusercontent.com/`` URLs from the two verified mirrors (Gethe/wow-ui-source
   for the generated documentation, Ketho/BlizzardInterfaceResources for the resource lists).
+  ``load_export_bundle`` never fetches: it reads a local ``BlizzardInterfaceCode`` export
+  through the injected filesystem under installs ``env.detect_installs`` found.
 - Lua files are EXECUTED in the sandboxed Lua 5.1 VM through ``luavm``, never parsed with
   regular expressions: the documentation tables and resource lists are Lua data, and only the
   VM reads Lua data without guessing at the grammar.
@@ -22,7 +24,7 @@ import os
 import re
 import tempfile
 import urllib.request
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -30,6 +32,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from wow_addon_forge import luavm, tocfile
+from wow_addon_forge.env import FileSystem, detect_installs
 
 SCHEMA_VERSION = 1
 DEFAULT_FLAVOR = "forever"
@@ -201,11 +204,14 @@ class SourceBundle:
     Args:
         flavor: Normalised flavor, e.g. ``"forever"``.
         build: Client build string from the mirror's ``version.txt``, e.g. ``"1.60.1.70888"``.
-        source: Where the texts came from; ``"mirror"`` for ``fetch_mirror_bundle``.
+        source: Where the texts came from; ``"mirror"`` for ``fetch_mirror_bundle``,
+            ``"export"`` for ``load_export_bundle``.
         documentation: Documentation file name to Lua text, in name order.
         resources: Resource file name to Lua text, in name order.
         warnings: One string per skip during fetching (refused file names); build warnings
             are added to these by ``build_index``.
+        origin: The local export folder the texts were read from; ``""`` for a mirror
+            bundle. Sync results quote it so the user sees which export was indexed.
 
     Returns:
         Nothing; this is a data holder.
@@ -220,6 +226,7 @@ class SourceBundle:
     documentation: dict[str, str]
     resources: dict[str, str]
     warnings: list[str] = field(default_factory=list)
+    origin: str = ""
 
 
 def normalise_flavor(flavor: object) -> str:
@@ -350,6 +357,155 @@ def fetch_mirror_bundle(fetcher: Fetcher, flavor: str, *, max_workers: int = 16)
         resources=resources,
         warnings=warnings,
     )
+
+
+# [2026-11-11 T-044] A client export is the tree `ExportInterfaceFiles code` writes
+# under <flavor>/BlizzardInterfaceCode (docs/SPEC-PLUGIN.md §5 source 1). The doc
+# addon is looked for under Interface/AddOns first (the layout the Gethe mirror
+# republishes), then directly under the export folder; the folder that held the
+# TOC is the one read, and the export folder is reported as the bundle origin.
+EXPORT_DIR_NAME = "BlizzardInterfaceCode"
+_DOC_ADDON_NAME = "Blizzard_APIDocumentationGenerated"
+_EXPORT_RERUN_HINT = (
+    "In the game client, run ExportInterfaceFiles code, then sync again; "
+    'or call wow_api with {"action": "sync", "source": "mirror"}.'
+)
+
+
+def load_export_bundle(
+    fs: FileSystem, roots: Sequence[str] | None, flavor: str
+) -> SourceBundle | None:
+    """Read a local ``BlizzardInterfaceCode`` export into a ``SourceBundle``, if present.
+
+    Why this exists:
+        SPEC-PLUGIN §5 reads the generated documentation from the user's own export
+        ahead of the mirrors when one is on disk. This is the disk-only twin of
+        ``fetch_mirror_bundle``: it never touches the network, so an export sync
+        works offline and indexes exactly the client build the user runs.
+
+    Args:
+        fs: The filesystem to search and read through (production: ``RealFileSystem``).
+        roots: Install roots to search, passed to ``env.detect_installs``; ``None``
+            searches its defaults.
+        flavor: Flavor name; normalised with ``normalise_flavor``.
+
+    Returns:
+        ``None`` when no searched install holds ``<flavor>/BlizzardInterfaceCode``
+        (the ``auto`` fallback signal). Otherwise a ``SourceBundle`` with
+        ``source="export"``, the build from the install's ``.build.info`` version,
+        the documentation texts the export's TOC lists, no resources (a client
+        export carries none of the Ketho lists; the gap is the first warning), and
+        ``origin`` set to the export folder.
+
+    Failure modes:
+        Raises ``ApiIndexError("bad-export-data", ...)`` when an export folder is
+        present but unusable: no documentation TOC in either candidate folder, an
+        unreadable TOC or documentation file, a TOC listing no usable Lua file, or
+        a missing/non-dotted client version. Raises
+        ``ApiIndexError("bad-argument", ...)`` for an unsupported flavor.
+    """
+    normalised = normalise_flavor(flavor)
+    report = detect_installs(fs, roots)
+    for install in report.installs:
+        for flavor_info in install.flavors:
+            if flavor_info.flavor.strip("_").lower() != normalised:
+                continue
+            export_root = fs.join(install.root, flavor_info.flavor, EXPORT_DIR_NAME)
+            if not fs.is_dir(export_root):
+                continue
+            doc_dir = _export_doc_dir(fs, export_root)
+            build = _export_build(export_root, flavor_info.version)
+            documentation, warnings = _export_documentation(fs, doc_dir)
+            # [2026-11-11 T-044] The Ketho resource lists are not part of a client
+            # export and fetching them would break the zero-network export sync, so
+            # the bundle carries none and says so first; build_index adds one
+            # warning per missing list on top.
+            warnings.insert(
+                0,
+                "Local export carries no resource lists (GlobalAPI, Events, FrameXML, "
+                "WidgetAPI, Templates, Mixins, LuaEnum): undocumented names are not "
+                "indexed. Sync with source mirror for those.",
+            )
+            return SourceBundle(
+                flavor=normalised,
+                build=build,
+                source="export",
+                documentation=documentation,
+                resources={},
+                warnings=warnings,
+                origin=export_root,
+            )
+    return None
+
+
+def _export_doc_dir(fs: FileSystem, export_root: str) -> str:
+    toc_name = f"{_DOC_ADDON_NAME}.toc"
+    candidates = (
+        fs.join(export_root, "Interface", "AddOns", _DOC_ADDON_NAME),
+        fs.join(export_root, _DOC_ADDON_NAME),
+    )
+    for candidate in candidates:
+        if fs.is_file(fs.join(candidate, toc_name)):
+            return candidate
+    raise ApiIndexError(
+        "bad-export-data",
+        f"Export at {export_root} has no {toc_name} under "
+        f"Interface/AddOns/{_DOC_ADDON_NAME} or {_DOC_ADDON_NAME}.",
+        _EXPORT_RERUN_HINT,
+    )
+
+
+def _export_build(export_root: str, version: str | None) -> str:
+    if version:
+        parts = version.split(".")
+        if len(parts) in (3, 4) and all(part.isdigit() for part in parts):
+            return version
+    raise ApiIndexError(
+        "bad-export-data",
+        f"Export at {export_root}: the install's client version is unknown or "
+        f"not a dotted build: {version!r}.",
+        _EXPORT_RERUN_HINT,
+    )
+
+
+def _export_documentation(fs: FileSystem, doc_dir: str) -> tuple[dict[str, str], list[str]]:
+    toc_path = fs.join(doc_dir, f"{_DOC_ADDON_NAME}.toc")
+    try:
+        toc_text = fs.read_text(toc_path)
+    except OSError as exc:
+        raise ApiIndexError(
+            "bad-export-data",
+            f"Export documentation TOC {toc_path} could not be read: {exc}.",
+            _EXPORT_RERUN_HINT,
+        ) from exc
+    warnings: list[str] = []
+    documentation: dict[str, str] = {}
+    for name in tocfile.parse_toc(toc_text).files:
+        if not name.endswith(".lua"):
+            continue
+        # [2026-11-11 T-044] Same refusal rule as the mirror TOC: documentation files
+        # live flat in one directory, so a separator or ".." would read outside it.
+        if "/" in name or "\\" in name or ".." in name:
+            warnings.append(f"Refused documentation file name {name!r} in export TOC; skipped.")
+            continue
+        path = fs.join(doc_dir, name)
+        try:
+            documentation[name] = fs.read_text(path)
+        except OSError as exc:
+            raise ApiIndexError(
+                "bad-export-data",
+                f"Export documentation file {path} could not be read: {exc}.",
+                _EXPORT_RERUN_HINT,
+            ) from exc
+    if not documentation:
+        raise ApiIndexError(
+            "bad-export-data",
+            f"Export documentation TOC {toc_path} lists no usable Lua files.",
+            _EXPORT_RERUN_HINT,
+        )
+    # [2026-11-11 T-044] Sorted to keep SourceBundle's name-order contract (the
+    # mirror bundle is name-ordered too), whatever order the TOC listed.
+    return dict(sorted(documentation.items())), warnings
 
 
 def _as_str(value: Any) -> str:

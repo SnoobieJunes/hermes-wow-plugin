@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-044 — `wow_api sync` now indexes a local `BlizzardInterfaceCode` client export when one is on disk (`source export`, and ahead of the mirrors under `auto`) with no network call; `auto` without an export falls back to the mirrors and says so in `note`, and `export` without one returns `export-not-found`
 2026-11-11 — T-034 — Secret returns are opaque while a restriction is active; arithmetic, comparison and concatenation on them are findings, and a widget setter may hold the value
 2026-11-11 — T-024 — Added the Addon Forge desktop pane and its backend: status, addon list, check, install, and bridge pull, with long calls off the request thread
 2026-11-11 — T-014 — Catalog baseline: MIT `LICENSE`, `SECURITY.md`, a disclosure section, and CI that runs the full gate on macOS and Linux

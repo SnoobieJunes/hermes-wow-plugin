@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — export sync layout and resource-list gap  [tech-debt]
+- Task: T-044 (`docs/SPEC-PLUGIN.md` §5 source 1)
+- What: `load_export_bundle` finds the documentation addon under `<flavor>/BlizzardInterfaceCode/Interface/AddOns/Blizzard_APIDocumentationGenerated` (the tree the Gethe mirror republishes), falling back to the addon folder directly under the export; the index build string is the install's `.build.info` version for that flavor. An export bundle carries no Ketho resource lists — including `LuaEnum.lua`, so a documentation file that reads `Enum.*` while building its table fails with a per-file warning in `build_index` (the same failure a mirror bundle missing that resource has today) — and the bundle's first warning says the lists are absent.
+- Why: SPEC-PLUGIN §5 names only the export folder, not the sub-layout or where the build string comes from, and T-044's Accept requires zero network calls for an export sync, which forbids fetching the resource lists. No real `BlizzardInterfaceCode` export exists on this machine (checked 2026-11-11), so the sub-layout is the mirror's tree, proven against fake installs only.
+- Where: `src/wow_addon_forge/apidocs.py` (`load_export_bundle`), `src/wow_addon_forge/tools.py` (`ForgeTools._api_sync`).
+- Plan: SPEC-PLUGIN §5 left the export sub-layout, build source and resource handling unspecified → pinned here. TASKS.md T-044 closed in this commit (its Touches gained `goose-deuce.md`); the owed real-export verification is filed as T-045 in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — secret comparison follows Lua 5.1  [decision]
 
 - **Plan / spec said:** Comparison on a secret value raises a `secret-value` finding.

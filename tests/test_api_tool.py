@@ -15,7 +15,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from test_apidocs import FakeFetcher, fixture_bundle, fixture_mirror_files
+from conftest import forever_install_files
+from test_apidocs import (
+    FakeFetcher,
+    fixture_bundle,
+    fixture_export_files,
+    fixture_mirror_files,
+)
 
 import wow_addon_forge.tools as tools_module
 from wow_addon_forge import PROVIDES_TOOLS
@@ -53,11 +59,12 @@ def make_tools(
     fake_fs_factory: Any,
     cache_dir: Path,
     fetcher: Any | None = None,
+    files: dict[str, str] | None = None,
 ) -> ForgeTools:
     """Build hermetic ``ForgeTools``: fake fs, fake fetcher, tmp cache, fixed clock."""
     active = fetcher if fetcher is not None else FakeFetcher(fixture_mirror_files())
     return ForgeTools(
-        fs=fake_fs_factory({}),
+        fs=fake_fs_factory(files if files is not None else {}),
         fetcher=active,
         cache_dir=cache_dir,
         clock=lambda: FIXED_TIME,
@@ -78,7 +85,7 @@ def synced(tools: ForgeTools) -> dict[str, Any]:
 
 
 def test_01_sync_then_status(fake_fs_factory: Any, tmp_path: Path) -> None:
-    """1: sync builds and caches the index (auto notes T-044); status then ages 0."""
+    """1: sync builds and caches the index (auto notes the mirror fallback); status ages 0."""
     assert fixture_bundle().build == "1.60.1.70888"
     tools = make_tools(fake_fs_factory, tmp_path)
     payload = call(tools, {"action": "sync"})
@@ -90,8 +97,8 @@ def test_01_sync_then_status(fake_fs_factory: Any, tmp_path: Path) -> None:
     cache_file = Path(payload["cache_file"])
     assert cache_file.is_relative_to(tmp_path)
     assert cache_file.exists()
-    assert "export" in payload["note"]
-    assert "T-044" in payload["note"]
+    assert "fell back" in payload["note"]
+    assert "BlizzardInterfaceCode" in payload["note"]
     mirror = call(tools, {"action": "sync", "source": "mirror"})
     assert mirror["ok"] is True
     assert "note" not in mirror
@@ -185,12 +192,12 @@ def test_05_bad_action_and_non_mapping_args(fake_fs_factory: Any, tmp_path: Path
 
 
 def test_06_export_source_refused_and_unknown_source(fake_fs_factory: Any, tmp_path: Path) -> None:
-    """6: source export is export-not-supported with no fetch/write; others bad-argument."""
+    """6: source export with no export on disk is export-not-found; others bad-argument."""
     fetcher = FakeFetcher(fixture_mirror_files())
     tools = make_tools(fake_fs_factory, tmp_path, fetcher)
     payload = call(tools, {"action": "sync", "source": "export"})
     assert payload["ok"] is False
-    assert payload["error"]["code"] == "export-not-supported"
+    assert payload["error"]["code"] == "export-not-found"
     assert fetcher.urls == []
     assert list(tmp_path.iterdir()) == []
     other = call(tools, {"action": "sync", "source": "carrier-pigeon"})
@@ -314,4 +321,36 @@ def test_13_cli_api_verb(
     capsys.readouterr()
     assert main(["api", "sync", "--source", "export"], tools=tools) == 1
     exported = json.loads(capsys.readouterr().out)
-    assert exported["error"]["code"] == "export-not-supported"
+    assert exported["error"]["code"] == "export-not-found"
+
+
+def test_14_export_and_auto_sync_use_local_export_without_network(
+    fake_fs_factory: Any, tmp_path: Path
+) -> None:
+    """14: source export, then auto, index the fake install's export; zero fetches."""
+    fetcher = FakeFetcher(fixture_mirror_files())
+    tools = make_tools(fake_fs_factory, tmp_path, fetcher, files=fixture_export_files())
+    payload = call(tools, {"action": "sync", "source": "export"})
+    assert payload["ok"] is True
+    assert payload["source"] == "export"
+    assert payload["build"] == "1.60.1.70888"
+    assert "BlizzardInterfaceCode" in payload["note"]
+    assert fetcher.urls == []
+    hit = call(tools, {"action": "lookup", "name": "C_ForgeExport.SendExportPing"})
+    assert hit["ok"] is True
+    assert hit["found"] is True
+    auto = call(tools, {"action": "sync", "source": "auto"})
+    assert auto["ok"] is True
+    assert auto["source"] == "export"
+    assert fetcher.urls == []
+
+
+def test_15_auto_falls_back_to_mirror_without_export(fake_fs_factory: Any, tmp_path: Path) -> None:
+    """15: auto on an install with no export folder uses the mirror and says so."""
+    fetcher = FakeFetcher(fixture_mirror_files())
+    tools = make_tools(fake_fs_factory, tmp_path, fetcher, files=forever_install_files())
+    payload = call(tools, {"action": "sync", "source": "auto"})
+    assert payload["ok"] is True
+    assert payload["source"] == "mirror"
+    assert "fell back" in payload["note"]
+    assert fetcher.urls != []

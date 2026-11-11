@@ -5,8 +5,9 @@ Invariants owned by this file:
   ``{"ok": false, "error": {"code", "message", "hint"}}`` (docs/SPEC-PLUGIN.md §3).
 - ``register_tools`` registers exactly the names in ``wow_addon_forge.PROVIDES_TOOLS``, which
   plugin.yaml ``provides_tools`` must match 1:1.
-- ``wow_env`` writes nothing. ``wow_api`` writes only the API index cache, and only on ``sync``,
-  which is also the plugin's only network call. ``wow_check``, ``wow_test``, ``wow_errors`` and
+- ``wow_env`` writes nothing. ``wow_api`` writes only the API index cache, and only on ``sync``;
+  a mirror sync is the plugin's only network call, an export sync reads local files only.
+  ``wow_check``, ``wow_test``, ``wow_errors`` and
   ``wow_savedvars`` write nothing. ``wow_install`` writes only the destination addon folder and
   a backup under the plugin data directory. ``wow_bridge`` writes the pull cursor under the
   plugin data directory and, on push, only ``Inbox.lua`` inside a bridge-enabled addon.
@@ -24,14 +25,17 @@ from typing import Any
 
 from wow_addon_forge import TOOLSET
 from wow_addon_forge.apidocs import (
+    EXPORT_DIR_NAME,
     ApiIndex,
     ApiIndexError,
     Fetcher,
     IndexStore,
+    SourceBundle,
     UrlFetcher,
     build_index,
     default_cache_dir,
     fetch_mirror_bundle,
+    load_export_bundle,
     normalise_flavor,
 )
 from wow_addon_forge.bridge import (
@@ -90,7 +94,8 @@ WOW_API_SCHEMA: dict[str, Any] = {
         "Build and query the API index for a World of Warcraft client build: which functions, "
         "events, enums, tables, templates and widget methods exist, what they take and return, "
         "and whether the documentation marks them restricted or secret. Actions: sync "
-        "(download the public documentation mirrors and rebuild the index; the plugin's only "
+        "(rebuild the index from a local BlizzardInterfaceCode export when present, "
+        "otherwise the public documentation mirrors; a mirror sync is the plugin's only "
         "network call), status, lookup (one exact name), search (text inside names), events "
         "(event names). Look every API call and event up here before writing addon code."
     ),
@@ -127,9 +132,11 @@ WOW_API_SCHEMA: dict[str, Any] = {
                 "type": "string",
                 "enum": list(WOW_API_SOURCES),
                 "description": (
-                    "For sync. auto (the default) and mirror download the public mirrors. "
-                    "export (the client's own exported interface files) is not supported yet "
-                    "and returns an error."
+                    "For sync. auto (the default) indexes the client's own "
+                    "BlizzardInterfaceCode export when one is on disk and otherwise "
+                    "downloads the public mirrors, saying which in note. export reads "
+                    "only the local export (no network) and errors when none is found. "
+                    "mirror always downloads the public mirrors."
                 ),
             },
         },
@@ -609,14 +616,16 @@ class ForgeTools:
         Returns:
             ``{"ok": True, "action": <action>, ...}`` with the fields of the matching
             ``ApiIndex`` method (``status``, ``lookup``, ``search``, ``events``); for
-            ``sync`` the new index's status plus ``cache_file``, and a ``note`` when
-            ``source`` was ``auto``. A lookup of a name the build does not have is an
+            ``sync`` the new index's status plus ``cache_file``, and a ``note`` naming
+            the source a sync actually used (the local export folder, or the mirror
+            fallback under ``auto``). A lookup of a name the build does not have is an
             answer, not an error: ``ok`` is true and ``found`` is false.
 
         Failure modes:
             Never raises. Error codes: ``bad-argument``; ``no-index`` and ``stale-index``
-            (with the sync call to run); ``export-not-supported``; ``fetch-failed``,
-            ``fetch-refused`` and ``bad-mirror-data`` from a sync; ``lua-vm-unavailable``;
+            (with the sync call to run); ``export-not-found`` and ``bad-export-data``
+            from an export sync; ``fetch-failed``, ``fetch-refused`` and
+            ``bad-mirror-data`` from a mirror sync; ``lua-vm-unavailable``;
             ``internal-error`` for anything unexpected.
         """
         # [2026-11-11 T-005] Same run-time shape check as env_result: the value comes from a
@@ -706,7 +715,7 @@ class ForgeTools:
         return {"ok": True, "action": action, **index.events(filter_text)}
 
     def _api_sync(self, store: IndexStore, flavor: str, source: object) -> dict[str, Any]:
-        """Download the mirrors, build the index, cache it, and report its status."""
+        """Build the index from the chosen source, cache it, and report its status."""
         chosen = "auto" if source is None or source == "" else source
         if not isinstance(chosen, str) or chosen not in WOW_API_SOURCES:
             raise ApiIndexError(
@@ -714,33 +723,50 @@ class ForgeTools:
                 f"source must be one of {', '.join(WOW_API_SOURCES)}; got {source!r}",
                 'Call wow_api with {"action": "sync"} to use the public mirrors.',
             )
-        # [2026-11-11 T-005] The client's own export (SPEC-PLUGIN §5 source 1) is not built:
-        # no export exists on the development machine, so its folder layout is unverified.
-        # Asking for it is refused out loud instead of quietly using the mirror
-        # (goose-deuce.md 2026-11-11 "wow_api sync reads the mirrors only").
-        if chosen == "export":
-            raise ApiIndexError(
-                "export-not-supported",
-                "Reading the client's own exported interface files is not supported yet "
-                "(TASKS.md T-044). Nothing was downloaded or written.",
-                'Call wow_api with {"action": "sync"} to build the index from the public mirrors.',
+        # [2026-11-11 T-044] SPEC-PLUGIN §5 source order: the client's own export
+        # ahead of the mirrors. A configured wow_root is the only install searched
+        # (same rule as wow_env, T-039); the fetcher is not even built on the
+        # export path, so an export sync provably makes zero network calls.
+        if chosen in ("export", "auto"):
+            roots: Sequence[str] | None = (
+                [self._configured_root] if self._configured_root else self._default_roots
             )
+            bundle = load_export_bundle(self._fs, roots, flavor)
+            if bundle is not None:
+                result = self._finish_sync(store, bundle)
+                prefix = "source auto used" if chosen == "auto" else "Indexed"
+                result["note"] = (
+                    f"{prefix} the local client export at {bundle.origin}; no network was used."
+                )
+                return result
+            if chosen == "export":
+                searched = ", ".join(roots if roots is not None else DEFAULT_ROOTS)
+                raise ApiIndexError(
+                    "export-not-found",
+                    f"No {EXPORT_DIR_NAME} export was found for flavor {flavor} under "
+                    f"the searched installs: {searched}. Nothing was downloaded or written.",
+                    "In the game client, run ExportInterfaceFiles code, then sync again; "
+                    'or call wow_api with {"action": "sync", "source": "mirror"}.',
+                )
         fetcher = self._fetcher if self._fetcher is not None else UrlFetcher()
-        bundle = fetch_mirror_bundle(fetcher, flavor)
+        result = self._finish_sync(store, fetch_mirror_bundle(fetcher, flavor))
+        if chosen == "auto":
+            result["note"] = (
+                f"source auto fell back to the public mirrors: no local {EXPORT_DIR_NAME} "
+                "export was found under the searched installs."
+            )
+        return result
+
+    def _finish_sync(self, store: IndexStore, bundle: SourceBundle) -> dict[str, Any]:
+        """Build one bundle into a cached index and return its sync result."""
         data = build_index(bundle, generated_at=self._clock())
         cache_file = store.save(data)
-        result: dict[str, Any] = {
+        return {
             "ok": True,
             "action": "sync",
             **ApiIndex(data).status(now=self._clock()),
             "cache_file": cache_file,
         }
-        if chosen == "auto":
-            result["note"] = (
-                "source auto used the public mirrors: reading the client's own export is not "
-                "supported yet (TASKS.md T-044)."
-            )
-        return result
 
     def handle_api(self, args: object = None, **_kwargs: Any) -> str:
         """Handle a ``wow_api`` tool call and return its result as JSON text.

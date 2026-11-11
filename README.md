@@ -92,13 +92,20 @@ The Interface number it reports is derived from the client version (1.60.1 gives
 and the output says so in `interface_source`.
 
 `api` is the command-line twin of the `wow_api` tool (`sync`, `status`, `lookup <name>`,
-`search <query>`, `events [query]`). `api sync` fetches the `forever` branches of
-`Gethe/wow-ui-source` and `Ketho/BlizzardInterfaceResources` over HTTPS from
-`raw.githubusercontent.com`, executes the Lua tables in the sandboxed Lua 5.1 VM, and
-writes the index atomically under `$HERMES_HOME/cache/wow-addon-forge/api-index` (or
-`~/.hermes/cache/wow-addon-forge/api-index`). Reading a local `BlizzardInterfaceCode`
-export (`--source export`) is deferred to T-044 and returns an explicit
-`export-not-supported` error.
+`search <query>`, `events [query]`). `api sync` (default `--source auto`) first looks
+for a local client export — `<flavor>/BlizzardInterfaceCode`, written by the in-game
+console command `ExportInterfaceFiles code` — under the same installs `env` searches;
+when one is present it is indexed with no network call, and the result's `note` names
+the export folder. With no export on disk, `auto` falls back to the mirrors and
+`note` says so: it fetches the `forever` branches of `Gethe/wow-ui-source` and
+`Ketho/BlizzardInterfaceResources` over HTTPS from `raw.githubusercontent.com`.
+`--source export` reads only the local export and returns `export-not-found` when
+none is present; `--source mirror` always downloads. Either way the Lua tables are
+executed in the sandboxed Lua 5.1 VM, and the index is written atomically under
+`$HERMES_HOME/cache/wow-addon-forge/api-index` (or
+`~/.hermes/cache/wow-addon-forge/api-index`). An export carries none of the Ketho
+resource lists, so an export index covers the documented API only; its warnings say
+so, and a mirror sync is the way to index undocumented names too.
 
 ## Disclosure
 
