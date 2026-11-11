@@ -7,14 +7,6 @@
       Why: Headless passes are not in-game passes (LOOP.md rule 9).
       Accept: INGAME-CHECKLIST lines 6–12 carry results from the live client; every FAIL has a task.
       Touches: `docs/INGAME-CHECKLIST.md`, `TASKS.md`, `CHANGELOG.md`   Depends: T-035, T-023   Gated: owner
-- [ ] T-037 — Publish the repository and open the catalog pull request
-      Why: The hackathon entry is a catalog PR pinned to a full commit SHA.
-      Accept: The owner approves the push; the diff and commit metadata are scanned for secrets and personal data; `plugin-catalog/wow-addon-forge.yaml` pins the 40-character SHA with the SPEC-PLUGIN §13 disclosure; the PR URL is written on this task.
-      Touches: `README.md`, `TASKS.md`, `CHANGELOG.md`   Depends: T-014   Gated: owner
-- [ ] T-038 — Record the demo, post it, submit the form
-      Why: The other two entry requirements, due 2026-11-11 14:00 PST.
-      Accept: A demo under 90 seconds is posted on X tagging @NousResearch; the form is submitted with the PR and post URLs; both URLs are written on this task.
-      Touches: `docs/`, `README.md`, `TASKS.md`, `CHANGELOG.md`   Depends: T-037   Gated: owner
 - [ ] T-059 — Discord bridge relay: game ⇄ Discord, end to end
       Why: The bridge contract (SPEC-PLUGIN §7) moves records through files only; the demo's closing beat needs a real Discord channel so the round trip is visible (SPEC-GUILDHALL §10).
       Accept: `scripts/discord_bridge.py poll|once` POSTs each new outbox record to a Discord incoming webhook, and `send` pushes a Discord-sourced post into `Inbox.lua` for the addon to apply on `/reload`; the webhook URL is read from `$GUILDHALL_DISCORD_WEBHOOK` (or `--webhook`) and is never committed. Live: a board post appears in the channel, and a `send` appears on the board after `/reload`. A unit test covers the webhook POST and the record shape against a mocked HTTP layer. Full gate green.
@@ -83,6 +75,16 @@
 ## Dropped
 
 ## Done
+- [x] T-038 — Record the demo, post it, submit the form (2026-11-11, this commit)
+      Why: The other two entry requirements, due 2026-11-11 14:00 PST.
+      Accept: A demo under 90 seconds is posted on X tagging @NousResearch; the form is submitted with the PR and post URLs; both URLs are written on this task.
+      Touches: `docs/`, `README.md`, `TASKS.md`, `CHANGELOG.md`   Depends: T-037   Gated: owner
+      Owner-recorded demo posted: https://x.com/austonion/status/2120637494932967912 — entry form submitted by the owner before the 14:00 PST deadline (owner report, 2026-11-11).
+- [x] T-037 — Publish the repository and open the catalog pull request (2026-11-11, this commit)
+      Why: The hackathon entry is a catalog PR pinned to a full commit SHA.
+      Accept: The owner approves the push; the diff and commit metadata are scanned for secrets and personal data; `plugin-catalog/wow-addon-forge.yaml` pins the 40-character SHA with the SPEC-PLUGIN §13 disclosure; the PR URL is written on this task.
+      Touches: `README.md`, `TASKS.md`, `CHANGELOG.md`   Depends: T-014   Gated: owner
+      Published: https://github.com/SnoobieJunes/hermes-wow-plugin (public, main). Catalog PR: https://github.com/NousResearch/hermes-agent/pull/154059 (pin bumped to the closing HEAD in the follow-on fork commit).
 - [x] T-054 — Reconcile live sender identity format with Trust/Sync name keys (2026-11-11, this commit)
       Why: Live T-035 evidence: the guild echo sender arrived as `Friar Baggins` (space, no `-Realm` suffix), while records author `Name-Realm` from UnitName+GetRealmName and Trust resolves roles by name — a mismatch would silently un-verify real guild traffic.
       Accept: Headless: a client whose wire sender lacks the realm suffix (or contains a space) still has its officer records applied and its claims attested exactly as the Name-Realm form does today; the normalisation is in one seam and named. Full gate green.

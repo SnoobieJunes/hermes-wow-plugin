@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-037/T-038 — Published: the repository is public, the Hermes catalog PR is open (NousResearch/hermes-agent#154059), the demo is posted and the hackathon entry form submitted before the 14:00 PST deadline (no user-visible change)
 2026-11-11 — T-059 — Added the Discord bridge relay (`scripts/discord_bridge.py`): board posts can be delivered to a real Discord channel and Discord posts pushed back onto the board after `/reload`; the webhook URL comes from `$GUILDHALL_DISCORD_WEBHOOK` and is never committed
 2026-11-11 — T-054 — Fixed officers being refused as "not-allowed" in the live client: role lookup now matches the bare character name Forever's roster uses, not only the Name-Realm form records carry
 2026-11-11 — T-058 — ForgeProbe no longer attempts to register COMBAT_LOG_EVENT_UNFILTERED (proven client-blocked live; the attempt itself raised the Blizzard-UI modal once per probe run) and records it registered=false without trying
