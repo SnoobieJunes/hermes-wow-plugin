@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-041 — The plugin-done gate: build a throwaway addon end to end through the enabled plugin
-      Why: Owner rule: no addon work starts until the plugin is finished and proven by use (PLAN §5).
-      Accept: Every tool in SPEC-PLUGIN §3 is registered and `hermes plugins validate . --install-deps` passes. `hermes plugins list` shows `wow-addon-forge` enabled (it is already linked to this repo). A fresh Hermes session started in a scratch directory with the `wow-addon-builder` skill builds a throwaway addon using only the plugin's tools: `wow_env` and `wow_install` against a temporary fake install, `wow_api` against the live index, `wow_new`, `wow_check` with verdict `pass`, `wow_test`, `wow_savedvars` and `wow_errors` on fixtures, and `wow_bridge` pull and push. That session's tool calls and verdicts are saved under `docs/gate/` and summarised in the commit body. Every defect found is fixed in the plugin first and the gate is re-run from a fresh session until it passes clean. Full gate green.
-      Touches: `docs/gate/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, and any plugin file a defect requires   Depends: T-014   Gated: none
 - [ ] T-042 — Guildhall, scaffolded by the plugin
       Why: The addon is the plugin's acceptance test; it starts from `wow_new`, not from hand-written files (LOOP.md rule 10).
       Accept: The T-003 stub under `addons/Guildhall` and its skeleton test are removed. `wow_new`, called as a tool in the session, creates `addons/Guildhall` with every block, name `Guildhall`, slash `/gh` and the Classic theme. `wow_check` and `wow_test`, called as tools, return `pass`, and their JSON summaries are quoted in the commit body. The five-client convergence test runs against the scaffolded addon. Full gate green.
@@ -103,6 +99,10 @@
       Touches: `docs/PLAN.md`, `TASKS.md`, `goose-deuce.md`, `AGENTS.md`, `CHANGELOG.md`   Depends: T-000   Gated: owner
 
 ## Blocked
+- [!] T-041 — The plugin-done gate: build a throwaway addon end to end through the enabled plugin — BLOCKED 2026-11-11: the host gateway (PID 31332, started 01:44) only exposes `wow_env`. A fresh `hermes chat` cannot call the other eight tools. Restarting the gateway from inside this process is blocked. Decision needed: restart the gateway from a shell outside Hermes (`hermes gateway restart`). Recommendation: yes. Resume: `git stash pop` (stash `T-041`), then re-run the scratch session. Park note: `docs/gate/BLOCKED.md`.
+      Why: Owner rule: no addon work starts until the plugin is finished and proven by use (PLAN §5).
+      Accept: Every tool in SPEC-PLUGIN §3 is registered and `hermes plugins validate . --install-deps` passes. `hermes plugins list` shows `wow-addon-forge` enabled (it is already linked to this repo). A fresh Hermes session started in a scratch directory with the `wow-addon-builder` skill builds a throwaway addon using only the plugin's tools: `wow_env` and `wow_install` against a temporary fake install, `wow_api` against the live index, `wow_new`, `wow_check` with verdict `pass`, `wow_test`, `wow_savedvars` and `wow_errors` on fixtures, and `wow_bridge` pull and push. That session's tool calls and verdicts are saved under `docs/gate/` and summarised in the commit body. Every defect found is fixed in the plugin first and the gate is re-run from a fresh session until it passes clean. Full gate green.
+      Touches: `docs/gate/`, `README.md`, `CHANGELOG.md`, `TASKS.md`, and any plugin file a defect requires   Depends: T-014   Gated: owner
 
 ## Dropped
 

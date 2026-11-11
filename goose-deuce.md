@@ -123,6 +123,14 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — T-041 parked on a stale gateway tool list  [process]
+
+- **Plan / spec said:** T-041 runs a fresh Hermes session that calls every plugin tool.
+- **Actually did:** Parked the task. The host gateway (PID 31332, started 2026-11-11 01:44) still exposes only `wow_env`. A reload did not publish the other eight tools. Restarting the gateway from this process is blocked. Uncommitted fixes (`root` on install/savedvars/errors/bridge, and keeping the Lua `string` library) are in stash `T-041`.
+- **Why:** Forcing a gateway restart would kill this session. The accept cannot be met until a session started after an outside restart can see the tools.
+- **Commit(s):** this commit
+- **Consequence:** Next wakeup checks whether `wow_api` is visible. If it is, pop the stash and resume T-041. If not, leave it blocked and pick the next eligible task.
+
 ## 2026-11-11 — CI clones Hermes to run the catalog gate  [decision]
 - Task: T-014
 - What: GitHub Actions clones `NousResearch/hermes-agent` at depth 1 into the runner temp directory and runs `uv --directory that run hermes plugins validate . --install-deps`. It does not use the user install script, which writes a home directory.
