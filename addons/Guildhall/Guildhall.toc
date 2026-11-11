@@ -27,3 +27,4 @@ Modules/Calendar.lua
 UI/TabCalendar.lua
 Modules/Marks.lua
 UI/TabMarks.lua
+Modules/Tracker.lua

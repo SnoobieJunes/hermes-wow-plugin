@@ -123,6 +123,22 @@ tag, choose the owing one.
 <!-- Real entries accumulate below, NEWEST AT THE TOP. The top entries are
      session-start required reading (count: AGENTS.md → Session ritual). -->
 
+## 2026-11-11 — Tracker ships without the BG win bonus and the dungeon-completed row  [deferred]
+- Task: T-022 (`docs/SPEC-GUILDHALL.md` §7 earning table, §8.4)
+- What: Tracker claims the dungeon/raid boss, battleground-completed (base 5 only), world-PvP and attendance rows. The battleground "+2 for a win" and the "Dungeon completed 15" rows are not detected: `PVP_MATCH_COMPLETE` reports the winning faction as a number and no confirmed API in the live 1.60.1 index hands the tracker the player's own faction to compare it with, and no dungeon-completion event is in the headless runtime's confirmed event set to detect or test against.
+- Why: T-022's Accept requires the four shipped detections; inventing an untestable faction read or an unconfirmed event would assert behaviour nothing exercised (AGENTS.md → Comment standard honesty bound). ForgeProbe (T-035) is the sanctioned way to learn what the live client delivers.
+- Where: `addons/Guildhall/Modules/Tracker.lua` (amounts table comment), `TASKS.md` T-048.
+- Plan: SPEC-GUILDHALL §7 lists both rows as defaults → owed to T-048, filed in this commit; the spec is not amended (the rows stay the target). TASKS.md corrected in this commit (T-048 added).
+- Commit(s): this commit
+
+## 2026-11-11 — Tracker pins the attendance window and the honourable-kill key  [decision]
+- Task: T-022 (`docs/SPEC-GUILDHALL.md` §7 step 1, §8.4)
+- What: Two formats the spec left open are pinned in Tracker: an event's attendance window is the two hours from its `starts` (Calendar rows carry no duration), attendance requires a group of at least two passing the half-guild share rule, and a world-PvP claim key is `hk:<day>:<ordinal>` where the ordinal counts that client's five-kill blocks that day, so guildmates pvping together walk the same ordinals and their claims attest each other. Kills in a block that completes outside a qualifying group advance the baseline without claiming (no banking).
+- Why: §7 requires a dedupe key participants derive identically without a shared clock; a lifetime-count bucket differs per character and would strand every HK claim in the officer queue. The window length is a settings-shaped constant (`Tracker.attend_window`) so a later task can surface it.
+- Where: `addons/Guildhall/Modules/Tracker.lua` (`amounts`, `process_hk`, `check_attendance`).
+- Plan: the spec named the conditions, not the window length or key shape → pinned here. TASKS.md T-022 closed in this commit. `docs/PLAN.md` is not falsified; nothing to fold.
+- Commit(s): this commit
+
 ## 2026-11-11 — Stale comment in the marks spend test, corrected after the shipping commit  [process]
 - Task: T-021 (`docs/SPEC-GUILDHALL.md` §7; AGENTS.md → Comment standard)
 - What: T-021 shipped in c660161 with a test comment in `addons/Guildhall/Tests/marks.lua` asserting that `Sync.author` "marks a self-authored record unverified." That mechanism does not exist: `Sync.author` applies the record straight into the log, and only `Trust.receive` sets `unverified` (on the wire path, for records relayed by a non-officer sender). The assertion itself stands for the real reason — a spend is a self-only debit and the member holds 0 after the stake, so `math.min(0, 5)` debits nothing — so the comment was corrected to state the actual mechanism; no code or test changed.

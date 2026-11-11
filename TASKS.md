@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-022 — Guildhall Tracker: automatic participation
-      Why: Marks must be earned by playing, not by paperwork (SPEC-GUILDHALL §8.4).
-      Accept: Built through the plugin's tools (LOOP.md rule 10). Headless, with world fixtures: a dungeon boss kill in a group that is at least half guildmates authors one claim per addon user after the restriction lifts and none while it is active; the same kill in a group under half authors none; a battleground completion and a 5-kill honourable-kill delta each author a claim; attendance inside an event window authors a claim; an event that `IsEventValid` reports invalid disables its detection and the status line says so; no unit or combat API result is used in arithmetic. `wow_check` verdict `pass`. Full gate green.
-      Touches: `addons/Guildhall/Modules/Tracker.lua`, `addons/Guildhall/Guildhall.toc`, `addons/Guildhall/Tests/`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-021, T-020   Gated: none
 - [ ] T-023 — Guildhall Discord mirror, end to end
       Why: The Discord mirror is the demo's closing beat (SPEC-GUILDHALL §10).
       Accept: Built through the plugin's tools (LOOP.md rule 10). A board post authored in a simulated client appears in `wow_bridge pull` output after `client.reload()` as Discord-ready text; a `post` command sent with `wow_bridge push` becomes a `board.post` after the next reload when the loading character is an officer, and is reported refused in the outbox when it is not; an inbox item is never applied twice. `wow_check` verdict `pass`. Full gate green.
@@ -29,6 +25,10 @@
       Touches: `docs/`, `README.md`, `TASKS.md`, `CHANGELOG.md`   Depends: T-037   Gated: owner
 
 ## Later
+- [ ] T-048 — Tracker: battleground win bonus and dungeon-completed row
+      Why: SPEC-GUILDHALL §7 pays +2 for a battleground win and 15 for a completed dungeon; T-022 could not detect either honestly (goose-deuce.md 2026-11-11 "Tracker ships without the BG win bonus and the dungeon-completed row").
+      Accept: After T-035's probe results name a usable faction read and completion signal: headless, a won battleground claims 7 and a lost one 5; a completed dungeon claims 15 once per run. `wow_check` verdict `pass`. Full gate green.
+      Touches: `addons/Guildhall/Modules/Tracker.lua`, `addons/Guildhall/Tests/`, `tests/`, `CHANGELOG.md`, `TASKS.md`   Depends: T-022, T-035   Gated: none
 - [ ] T-025 — Guildhall Orders: request a craft with tracked phases
       Why: Crafting requests are a daily guild chore that lives in Discord today (SPEC-GUILDHALL §8.5).
       Accept: Headless: an `order.request` moves through the seven phases only in order and only by the requester or the crafter; an out-of-order or third-party `order.phase` is rejected; completing an order authors the crafter's Marks claim once; the order appears in the bridge outbox. `wow_check` verdict `pass`. Full gate green.
@@ -79,6 +79,10 @@
 ## Dropped
 
 ## Done
+- [x] T-022 — Guildhall Tracker: automatic participation (2026-11-11, this commit)
+      Why: Marks must be earned by playing, not by paperwork (SPEC-GUILDHALL §8.4).
+      Accept: Built through the plugin's tools (LOOP.md rule 10). Headless, with world fixtures: a dungeon boss kill in a group that is at least half guildmates authors one claim per addon user after the restriction lifts and none while it is active; the same kill in a group under half authors none; a battleground completion and a 5-kill honourable-kill delta each author a claim; attendance inside an event window authors a claim; an event that `IsEventValid` reports invalid disables its detection and the status line says so; no unit or combat API result is used in arithmetic. `wow_check` verdict `pass`. Full gate green.
+      Touches: `addons/Guildhall/Modules/Tracker.lua`, `addons/Guildhall/Guildhall.toc`, `addons/Guildhall/Tests/`, `tests/`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-021, T-020   Gated: none
 - [x] T-021 — Guildhall Marks ledger (2026-11-11, this commit)
       Why: The internal currency is the owner's core ask; its arithmetic must be exact on every client (SPEC-GUILDHALL §7).
       Accept: Built through the plugin's tools (LOOP.md rule 10). Headless: claims with one dedupe key from at least half the named guildmates are approved with no officer; a lone claim waits and is approved by an officer's `marks.approve`; a second claim with the same key by the same author adds nothing; daily caps hold; `marks.spend` cannot take a balance below zero; a staked reward is refunded on cancel; five clients agree on every balance after sync; balances before and after a checkpoint are equal. `wow_check` verdict `pass`. Full gate green.
