@@ -3,5 +3,6 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-002 — Added the toolchain and the gate: uv, pytest with a coverage floor, ruff, mypy, Hermes plugin validation, CI, and an embedded Lua 5.1 VM with a syntax check (no user-visible change)
 2026-11-11 — T-001 — Wrote the normative plan, the plugin spec, the Guildhall spec and the in-game checklist; seeded the backlog T-002..T-038 (no user-visible change)
 2026-11-11 — T-000 — Scaffolded the repository, the process files and the task board (no user-visible change)

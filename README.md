@@ -38,7 +38,18 @@ executes the checks instead of describing them.
 
 ## Install, run, test
 
-Arrives in T-002 (toolchain) and T-014 (catalog-ready install instructions).
+For development (needs [uv](https://docs.astral.sh/uv/); Hermes Agent for the last line):
+
+```bash
+uv sync --all-groups                         # install
+uv run python -m wow_addon_forge --version   # prints: wow-addon-forge 0.1.0
+uv run pytest -x -q                          # fast tests
+uv run pytest --cov=src/wow_addon_forge --cov-fail-under=85 && uv run ruff check . \
+  && uv run ruff format --check . && uv run mypy src && hermes plugins validate .   # the full gate
+```
+
+Lua code is checked and tested in an embedded Lua 5.1 VM (`lupa`), not the system `lua`.
+Install instructions for users arrive in T-014.
 
 ## What the plugin touches on your machine
 

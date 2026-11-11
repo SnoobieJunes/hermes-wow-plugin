@@ -41,13 +41,14 @@ green commit, record where the work lives on the task, and stop cleanly.
 
   | Path | What lives there |
   |---|---|
+  | `plugin.yaml`, `__init__.py` | Hermes plugin manifest and root entrypoint (`register(ctx)`) |
   | `src/wow_addon_forge/` | the plugin: install detection, API index, Lua 5.1 checks, headless WoW runtime, install / errors / saved variables, Discord bridge, tool and CLI handlers |
   | `addons/Guildhall/` | the guild addon (Lua 5.1 + TOC, Interface 16001) |
   | `addons/ForgeProbe/` | companion addon the plugin installs: in-game capability probe and Lua error catcher |
   | `skills/` | bundled Hermes skill (`skills/wow-addon-builder/SKILL.md`) |
   | `desktop/`, `dashboard/` | Hermes Desktop pane (`desktop/plugin.js`) and its REST backend |
   | `tests/` | pytest suite: Python units plus Lua suites executed in the embedded Lua 5.1 VM |
-  | `scripts/` | loop and review-lane runners (`scripts/night-loop.sh`) |
+  | `scripts/` | repository maintenance scripts; the loop runners live in the git-ignored `.loop/` so nothing that spawns Hermes ships at the catalog pin |
   | `docs/PLAN.md` | the normative plan — goose-deuce.md `Plan:` fields measure against it |
   | `docs/SPEC-PLUGIN.md`, `docs/SPEC-GUILDHALL.md` | normative product specs; `docs/PLAN.md` points at them |
   | `docs/INGAME-CHECKLIST.md` | normative: the owner-run live-client acceptance steps and their recorded results |
@@ -62,18 +63,18 @@ green commit, record where the work lives on the task, and stop cleanly.
 - **Commands** (run from repo root; every one of these must actually work):
 
   ```bash
-  ⟨TBD step 3⟩                                          # install / bootstrap
-  ⟨TBD step 3⟩                                          # launch (smoke-checkable)
-  ⟨TBD step 3⟩                                          # inner loop while iterating
-  ⟨TBD step 3⟩                                          # the pre-commit gate
-  ⟨TBD step 3⟩                                          # static gates — check mode
+  uv sync --all-groups                                  # install / bootstrap
+  uv run python -m wow_addon_forge --version            # launch (smoke-checkable)
+  uv run pytest -x -q                                   # inner loop while iterating
+  uv run pytest --cov=src/wow_addon_forge --cov-fail-under=85 && uv run ruff check . && uv run ruff format --check . && uv run mypy src && hermes plugins validate .  # the pre-commit gate
+  uv run ruff check . && uv run ruff format --check . && uv run mypy src  # static gates — check mode
                                                         # only; rewrites run BEFORE
                                                         # staging, never as the gate
-  ⟨TBD step 3⟩                                          # measures against the floor
-  ⟨TBD step 3⟩                                          # Hermes plugin validation gate
+  uv run pytest --cov=src/wow_addon_forge --cov-fail-under=85  # measures against the floor
+  hermes plugins validate .                             # Hermes plugin validation gate
   ```
 
-- **Coverage floor:** ⟨TBD step 3⟩% on `src/wow_addon_forge/` lines — measured by the
+- **Coverage floor:** 85% on `src/wow_addon_forge/` lines — measured by the
   coverage command above. Set from the measured number, not a wish. The floor only
   ratchets up; a task may not lower it. (Other sections point here; this line is
   the single owner of the number.)
@@ -93,6 +94,8 @@ green commit, record where the work lives on the task, and stop cleanly.
   - `hermes plugins validate` enforces the catalog rules: `provides_tools` must match the
     `ctx.register_tool` calls 1:1; `desktop/plugin.js` may import only `@hermes/plugin-sdk`,
     `react` and `react/jsx-runtime`; no committed `.pyc` or compiled binary (Rule 17).
+  - The validator's security scan reports `.eval(` in plugin code as a caution a reviewer must
+    read. In `src/` use `runtime.execute("return …")` or `runtime.globals()`; tests may use `.eval`.
   - Global git config on this machine has `init.defaultbranch=22`; always `git init -b main`.
   - `muse_turn` only accepts a workspace inside the session cwd: start sessions with
     `--in` this repo.

@@ -9,7 +9,7 @@ What a loop adds on top:
 
 1. **Autonomy guard** — PICK skips `Gated: owner` and `Gated: hardware` items
    unless the loop was pointed at one; a loop never answers its own escalations.
-2. **Verification** — fast inner loop while iterating: ⟨TBD step 3⟩.
+2. **Verification** — fast inner loop while iterating: `uv run pytest -x -q`.
    Before commit, the full gate exactly as AGENTS.md → Project snapshot writes
    it, foot-gun flags included. Red = fix or revert; never end an iteration red.
 3. **Push** — loops never push product commits. Not with prior approval, not

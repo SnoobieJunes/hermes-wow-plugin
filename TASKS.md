@@ -3,10 +3,6 @@
      acceptance criteria are not pickable — sharpen them first. -->
 
 ## Now
-- [ ] T-002 — Stand up the toolchain, the mechanical gates, and a real smoke test
-      Why: Every later task needs one automated gate: tests, lint, format, types, coverage, and Hermes plugin validation.
-      Accept: `uv sync --all-groups`, `uv run pytest`, `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy src` and `hermes plugins validate .` all pass; the smoke test runs a Lua chunk in the embedded Lua 5.1 VM and imports the package; every `TBD step 3` marker in `AGENTS.md` and `LOOP.md` is replaced; the AGENTS.md layout table gains the `plugin.yaml`, `__init__.py` row; a cold clone passes the full gate.
-      Touches: `pyproject.toml`, `.python-version`, `uv.lock`, `plugin.yaml`, `__init__.py`, `src/wow_addon_forge/`, `tests/test_smoke.py`, `.github/workflows/ci.yml`, `AGENTS.md`, `LOOP.md`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-001   Gated: none
 - [ ] T-003 — Build the walking skeleton: the plugin loads, one real tool answers, one addon file runs headless
       Why: Prove the architecture end to end before building on it: Hermes loads the plugin, a tool reads an install layout through an injected filesystem, and addon Lua executes in Lua 5.1.
       Accept: `hermes plugins validate .` passes with one declared tool `wow_env`; a unit test feeds `wow_env` a fake install tree and gets flavor `_forever_`, Interface `16001` and the addon list back as JSON; a test loads `addons/Guildhall/Guildhall.toc` and its first Lua file in the Lua 5.1 VM with no error; the full gate is green.
@@ -159,6 +155,10 @@
 ## Dropped
 
 ## Done
+- [x] T-002 — Stand up the toolchain, the mechanical gates, and a real smoke test (2026-11-11, this commit)
+      Why: Every later task needs one automated gate: tests, lint, format, types, coverage, and Hermes plugin validation.
+      Accept: `uv sync --all-groups`, `uv run pytest`, `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy src` and `hermes plugins validate .` all pass; the smoke test runs a Lua chunk in the embedded Lua 5.1 VM and imports the package; every `TBD step 3` marker in `AGENTS.md` and `LOOP.md` is replaced; the AGENTS.md layout table gains the `plugin.yaml`, `__init__.py` row; a cold clone passes the full gate.
+      Touches: `pyproject.toml`, `.python-version`, `uv.lock`, `plugin.yaml`, `__init__.py`, `src/wow_addon_forge/`, `tests/test_smoke.py`, `.github/workflows/ci.yml`, `AGENTS.md`, `LOOP.md`, `README.md`, `CHANGELOG.md`, `TASKS.md`   Depends: T-001   Gated: none
 - [x] T-001 — Write the normative plan, both product specs, the living docs, and the phase-1 backlog (2026-11-11, this commit)
       Why: The architecture, the two product specs and the task breakdown must exist and agree before any product code.
       Accept: `docs/PLAN.md`, `docs/SPEC-PLUGIN.md`, `docs/SPEC-GUILDHALL.md` and `docs/INGAME-CHECKLIST.md` are written and dated; `README.md` is expanded; `CHANGELOG.md` has entries for T-000 and T-001; the step-2 gate passes.

@@ -1,0 +1,21 @@
+# [2026-11-11 T-002] Root Hermes plugin manifest for wow-addon-forge (created 2026-11-11).
+# Invariants:
+#   1. kind MUST be "standalone" so PluginManager calls register(ctx).
+#   2. provides_tools MUST match the ctx.register_tool calls 1:1 (empty until T-003 adds wow_env).
+manifest_version: 2
+name: wow-addon-forge
+version: 0.1.0
+description: "Builds World of Warcraft: Forever addons that load and run: checks every API call against the real client build, runs the addon headless in Lua 5.1, installs it, and reads in-game errors back."
+author: "Auston (@SnoobieJunes)"
+license: MIT
+homepage: "https://github.com/SnoobieJunes/hermes-wow-plugin"
+kind: standalone
+requires_hermes: ">=0.22.0"
+tags:
+  - world-of-warcraft
+  - wow-forever
+  - addons
+  - lua
+  - gaming
+provides_tools: []
+provides_hooks: []
