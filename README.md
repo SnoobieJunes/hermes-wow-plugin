@@ -22,7 +22,7 @@ ForgeProbe's SavedVariables), `wow_savedvars` (reads any addon's SavedVariables 
 JSON), `wow_install` (copies or links an addon into `Interface/AddOns` after
 `wow_check` passes, backing up a replaced folder outside the game), and `wow_bridge`
 (pulls an outbox past a cursor, or pushes `Inbox.lua` for an addon that declares
-`## X-Forge-Bridge: 1`), and `wow_new` (scaffolds an addon from those blocks into an empty folder). `/wow status` and `hermes wow status` print the install, build, and index. Set `wow_root` when the game is not in a default folder; `wow_env` then searches only that folder. The `core` building block (`src/wow_addon_forge/blocks/core/`)
+`## X-Forge-Bridge: 1`), and `wow_new` (scaffolds an addon from those blocks into an empty folder). `/wow status` and `hermes wow status` print the install, build, and index. Set `wow_root` when the game is not in a default folder; every tool that reads the game folder then searches only there, and `wow_install`, `wow_savedvars`, `wow_errors` and `wow_bridge` also accept a per-call `root` naming one install folder (for example a temporary fake install in a test). The `core` building block (`src/wow_addon_forge/blocks/core/`)
 is the namespace, dispatcher, clock, store, safe codec and slash command a scaffolded
 addon stands on, plus the `log` block (record set and order-independent reducers), the `sync` block (chunked, throttled guild exchange), and the `trust` block (roster rank gates which records count), the `window` block (one lazy Classic window), and the `bridge` block (outbox and inbox for `wow_bridge`). `addons/ForgeProbe`
 ships with the plugin and passes `wow_check`; it has not been run in the live client

@@ -23,12 +23,26 @@ ns.Sync = {
 }
 
 local function self_name()
-    local name, realm = UnitName("player")
-    if type(name) ~= "string" then
+    -- [2026-11-11 T-041] Same guarded shape as Bridge.self_name: the live
+    -- 1.60.1 index marks UnitName restricted / secret-returning, so call it
+    -- through pcall and drop a secret result instead of concatenating it.
+    local ok, name, realm = pcall(UnitName, "player")
+    if not ok or type(name) ~= "string" then
+        return ""
+    end
+    local secret_ok, secret = pcall(issecretvalue, name)
+    if secret_ok and secret then
         return ""
     end
     if type(realm) ~= "string" or realm == "" then
-        realm = GetRealmName() or ""
+        realm = ""
+        local realm_ok, realm_name = pcall(GetRealmName)
+        if realm_ok and type(realm_name) == "string" then
+            local realm_secret_ok, realm_secret = pcall(issecretvalue, realm_name)
+            if not (realm_secret_ok and realm_secret) then
+                realm = realm_name
+            end
+        end
     end
     if realm ~= "" and not name:find("-", 1, true) then
         return name .. "-" .. realm

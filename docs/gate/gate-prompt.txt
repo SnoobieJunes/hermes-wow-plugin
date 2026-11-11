@@ -1,0 +1,22 @@
+You are the T-041 plugin-done gate. Load and follow the wow-addon-builder skill.
+
+Use only these plugin tools: wow_env, wow_api, wow_new, wow_check, wow_test, wow_install, wow_savedvars, wow_errors, wow_bridge. Do not use terminal, file, browser, memory, or editing tools.
+
+Fake WoW root: /tmp/wow-gate-20261111/fake-wow
+Work folder: /tmp/wow-gate-20261111/work
+
+Do these steps in order. After each numbered step, print "STEP <n> <tool>: " followed by the exact JSON result or error. Stop immediately on any failure, print GATE FAILED AT STEP <n>, and do not retry with different arguments.
+
+1. wow_env with {"root":"/tmp/wow-gate-20261111/fake-wow"}
+2. wow_api with {"action":"status"}
+3. wow_api with {"action":"lookup","name":"C_ChatInfo.SendAddonMessage"}
+4. wow_new with {"name":"Throwaway","title":"Throwaway","modules":["core","log","sync","trust","window","bridge"],"dest":"/tmp/wow-gate-20261111/work/Throwaway"}
+5. wow_check with {"path":"/tmp/wow-gate-20261111/work/Throwaway"} — continue only if the verdict is pass.
+6. wow_test with {"path":"/tmp/wow-gate-20261111/work/Throwaway"}
+7. wow_install with {"path":"/tmp/wow-gate-20261111/work/Throwaway","root":"/tmp/wow-gate-20261111/fake-wow","mode":"copy","dry_run":false}
+8. wow_savedvars with {"addon":"GateFixture","root":"/tmp/wow-gate-20261111/fake-wow"}
+9. wow_errors with {"root":"/tmp/wow-gate-20261111/fake-wow"}
+10. wow_bridge with {"action":"pull","addon":"Throwaway","root":"/tmp/wow-gate-20261111/fake-wow"}
+11. wow_bridge with {"action":"push","addon":"Throwaway","root":"/tmp/wow-gate-20261111/fake-wow","records":[{"id":99,"t":20,"kind":"post","data":{"n":1},"via":"discord"}]}
+
+Finally print GATE PASS if every step returned ok (wow_check verdict pass), otherwise GATE FAIL.

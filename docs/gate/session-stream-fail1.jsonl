@@ -1,0 +1,332 @@
+{"type": "system", "subtype": "init", "model": "meituan/longcat-2.5:free", "session_id": "", "timestamp": 1794409829912}
+{"type": "tool_use", "name": "tool_describe", "tool_call_id": "call_ec01c085eeac4a52abba4977", "input": {"names": ["wow_env", "wow_api", "wow_new", "wow_check", "wow_test", "wow_install", "wow_savedvars", "wow_errors", "wow_bridge"]}, "timestamp": 1794409840454}
+{"type": "tool_result", "name": "tool_describe", "tool_call_id": "call_ec01c085eeac4a52abba4977", "output": "{\"tools\": {\"wow_env\": {\"description\": \"Find World of Warcraft installs on this machine: each flavor folder (for example _forever_), its client version and Interface number, the number of game accounts, and the installed addons with title, version and Interface list. Read-only: writes nothing.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"root\": {\"type\": \"string\", \"description\": \"Optional. The World of Warcraft folder to inspect (the one that contains _forever_). Omit to search the default locations.\"}}, \"additionalProperties\": false, \"required\": []}}, \"wow_api\": {\"description\": \"Build and query the API index for a World of Warcraft client build: which functions, events, enums, tables, templates and widget methods exist, what they take and return, and whether the documentation marks them restricted or secret. Actions: sync (rebuild the index from a local BlizzardInterfaceCode export when present, otherwise the public documentation mirrors; a mirror sync is the plugin's only network call), status, lookup (one exact name), search (text inside names), events (event names). Look every API call and event up here before writing addon code.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"action\": {\"type\": \"string\", \"enum\": [\"sync\", \"lookup\", \"search\", \"events\", \"status\"], \"description\": \"What to do: sync, lookup, search, events or status.\"}, \"name\": {\"type\": \"string\", \"description\": \"For lookup (required): the exact name, for example C_ChatInfo.SendAddonMessage or CHAT_MSG_ADDON.\"}, \"query\": {\"type\": \"string\", \"description\": \"For search (required): text to find inside names. For events (optional): only event names containing this text.\"}, \"flavor\": {\"type\": \"string\", \"description\": \"Optional. The game flavor. Only forever (also written _forever_) is supported; it is the default.\"}, \"source\": {\"type\": \"string\", \"enum\": [\"auto\", \"mirror\", \"export\"], \"description\": \"For sync. auto (the default) indexes the client's own BlizzardInterfaceCode export when one is on disk and otherwise downloads the public mirrors, saying which in note. export reads only the local export (no network) and errors when none is found. mirror always downloads the public mirrors.\"}}, \"required\": [\"action\"], \"additionalProperties\": false}}, \"wow_new\": {\"description\": \"Scaffold an addon from the tested building blocks into dest. Refuses a non-empty dest. Writes only that folder.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\", \"description\": \"Addon name. A Lua identifier; folder name and slash.\"}, \"title\": {\"type\": \"string\", \"description\": \"TOC title shown in the addon list.\"}, \"modules\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}, \"description\": \"Blocks: core, log, sync, trust, window, bridge.\"}, \"dest\": {\"type\": \"string\", \"description\": \"Addon folder to create. Refused when it already has files.\"}}, \"required\": [\"name\", \"title\", \"modules\", \"dest\"], \"additionalProperties\": false}}, \"wow_check\": {\"description\": \"Run the six-stage static and headless verification pipeline on a World of Warcraft addon folder: TOC lint, Lua 5.1 syntax, bytecode global/member resolution, API and event restriction/deprecation rules against the cached client index, headless load with slash-command invocation and Simulated /reload, and efficiency lints. Returns findings with file and line plus verdict ('pass' or 'fail'). Read-only: writes nothing.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"Path to the addon folder (the directory holding <Addon>.toc).\"}, \"flavor\": {\"type\": \"string\", \"description\": \"Optional game flavor (default: forever).\"}}, \"required\": [\"path\"], \"additionalProperties\": false}}, \"wow_test\": {\"description\": \"Run an addon's own Lua 5.1 test suite in the headless WoW runtime, with one or more simulated guildmates per test case. Discovers Tests/*.lua by default, runs each test(name, fn) case in an isolated World, and reports pass/fail per test name. Read-only: writes nothing.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"Path to the addon folder under test.\"}, \"tests\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"array\", \"items\": {\"type\": \"string\"}}], \"description\": \"Optional. A relative or full Lua test file or folder path (or list of paths). Omit to run every *.lua file under Tests/.\"}, \"clients\": {\"type\": \"integer\", \"minimum\": 1, \"description\": \"Optional number of simulated guildmates per test (default: 1).\"}, \"flavor\": {\"type\": \"string\", \"description\": \"Optional game flavor for the API index (default: forever).\"}}, \"required\": [\"path\"], \"additionalProperties\": false}}, \"wow_install\": {\"description\": \"Install an addon into Interface/AddOns after wow_check passes. Backs up a replaced folder into the plugin data directory. Says whether /reload or a client restart is needed. dry_run writes nothing.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"Path of the addon folder to install.\"},...", "duration_ms": 26, "is_error": false, "timestamp": 1794409840481}
+{"type": "text", "text": "\n\nSTEP 1 wow", "timestamp": 1794409845178}
+{"type": "text", "text": "_env:", "timestamp": 1794409845229}
+{"type": "tool_use", "name": "wow_env", "tool_call_id": "call_967b7b16fafc414ea39a68a9", "input": {"root": "/tmp/wow-gate-20261111/fake-wow"}, "timestamp": 1794409845938}
+{"type": "tool_result", "name": "wow_env", "tool_call_id": "call_967b7b16fafc414ea39a68a9", "output": "{\"ok\": true, \"installs\": [{\"root\": \"/tmp/wow-gate-20261111/fake-wow\", \"flavors\": [{\"flavor\": \"_forever_\", \"product\": \"wowf\", \"version\": \"1.60.1.70888\", \"interface\": 16001, \"interface_source\": \"derived-from-version\", \"accounts\": 1, \"addon_count\": 0, \"addons\": []}]}], \"searched\": [\"/tmp/wow-gate-20261111/fake-wow\"], \"warnings\": []}", "duration_ms": 6, "is_error": false, "timestamp": 1794409845944}
+{"type": "text", "text": "\n\nSTEP ", "timestamp": 1794409848256}
+{"type": "text", "text": "1 wow_env:", "timestamp": 1794409848259}
+{"type": "text", "text": " {\"ok\": true", "timestamp": 1794409848309}
+{"type": "text", "text": ", \"installs", "timestamp": 1794409848350}
+{"type": "text", "text": "\": [{\"root\":", "timestamp": 1794409848472}
+{"type": "text", "text": " \"/tmp/wow", "timestamp": 1794409848472}
+{"type": "text", "text": "-gate-2", "timestamp": 1794409848476}
+{"type": "text", "text": "0261", "timestamp": 1794409848524}
+{"type": "text", "text": "111/f", "timestamp": 1794409848579}
+{"type": "text", "text": "ake-wow\",", "timestamp": 1794409848631}
+{"type": "text", "text": " \"flav", "timestamp": 1794409848678}
+{"type": "text", "text": "ors\": [{\"fl", "timestamp": 1794409848710}
+{"type": "text", "text": "avor\": \"_fore", "timestamp": 1794409848766}
+{"type": "text", "text": "ver_\", \"product", "timestamp": 1794409848814}
+{"type": "text", "text": "\": \"wowf", "timestamp": 1794409848858}
+{"type": "text", "text": "\", \"version\":", "timestamp": 1794409848903}
+{"type": "text", "text": " \"1.6", "timestamp": 1794409849005}
+{"type": "text", "text": "0.1.", "timestamp": 1794409849005}
+{"type": "text", "text": "7088", "timestamp": 1794409849051}
+{"type": "text", "text": "8\", \"interface", "timestamp": 1794409849085}
+{"type": "text", "text": "\": 16", "timestamp": 1794409849160}
+{"type": "text", "text": "001,", "timestamp": 1794409849174}
+{"type": "text", "text": " \"interface_source\":", "timestamp": 1794409849219}
+{"type": "text", "text": " \"derived-from-version", "timestamp": 1794409849263}
+{"type": "text", "text": "\", \"accounts\":", "timestamp": 1794409849311}
+{"type": "text", "text": " 1, \"", "timestamp": 1794409849358}
+{"type": "text", "text": "addon_count\": ", "timestamp": 1794409849407}
+{"type": "text", "text": "0, \"add", "timestamp": 1794409849529}
+{"type": "text", "text": "ons\": []}]", "timestamp": 1794409849532}
+{"type": "text", "text": "}], \"searched", "timestamp": 1794409849571}
+{"type": "text", "text": "\": [\"/tmp/w", "timestamp": 1794409849614}
+{"type": "text", "text": "ow-gate-", "timestamp": 1794409849636}
+{"type": "text", "text": "2026", "timestamp": 1794409849707}
+{"type": "text", "text": "1111", "timestamp": 1794409849730}
+{"type": "text", "text": "/fake-wow", "timestamp": 1794409849780}
+{"type": "text", "text": "\"], \"warnings\":", "timestamp": 1794409849824}
+{"type": "text", "text": " []}\n\nSTEP ", "timestamp": 1794409849878}
+{"type": "text", "text": "2 wow_api:", "timestamp": 1794409849918}
+{"type": "tool_use", "name": "wow_api", "tool_call_id": "call_311e9cc86c3e4e939100dddf", "input": {"action": "status"}, "timestamp": 1794409850384}
+{"type": "tool_result", "name": "wow_api", "tool_call_id": "call_311e9cc86c3e4e939100dddf", "output": "{\"ok\": true, \"action\": \"status\", \"flavor\": \"forever\", \"build\": \"1.60.1.70888\", \"source\": \"mirror\", \"schema\": 1, \"generated_at\": 1794392188.0031092, \"generated_at_utc\": \"2026-11-11T10:16:28Z\", \"age_seconds\": 17662, \"documentation_files\": 642, \"counts\": {\"function\": 12949, \"event\": 1816, \"enum\": 967, \"table\": 4397, \"template\": 4061, \"widget-method\": 2597}, \"warning_count\": 1, \"warnings\": [\"LFGConstantsDocumentation.lua: runtime: LFGConstantsDocumentation.lua:152: attempt to index field 'LFGRoleMeta' (a nil value)\"], \"warnings_truncated\": false}", "duration_ms": 94, "is_error": false, "timestamp": 1794409850479}
+{"type": "text", "text": "\n\nSTEP ", "timestamp": 1794409854886}
+{"type": "text", "text": "2 wow_api:", "timestamp": 1794409854902}
+{"type": "text", "text": " {\"ok\": true", "timestamp": 1794409854995}
+{"type": "text", "text": ", \"action\":", "timestamp": 1794409855007}
+{"type": "text", "text": " \"status\", \"", "timestamp": 1794409855074}
+{"type": "text", "text": "flavor\": \"", "timestamp": 1794409855120}
+{"type": "text", "text": "forever\", \"", "timestamp": 1794409855166}
+{"type": "text", "text": "build\": \"1", "timestamp": 1794409855302}
+{"type": "text", "text": ".60.", "timestamp": 1794409855303}
+{"type": "text", "text": "1.70", "timestamp": 1794409855304}
+{"type": "text", "text": "888\",", "timestamp": 1794409855350}
+{"type": "text", "text": " \"source\": \"", "timestamp": 1794409855405}
+{"type": "text", "text": "mirror\", \"", "timestamp": 1794409855492}
+{"type": "text", "text": "schema\": 1", "timestamp": 1794409855517}
+{"type": "text", "text": ", \"generated_at", "timestamp": 1794409855564}
+{"type": "text", "text": "\": 17", "timestamp": 1794409855602}
+{"type": "text", "text": "9439", "timestamp": 1794409855659}
+{"type": "text", "text": "2188", "timestamp": 1794409855684}
+{"type": "text", "text": ".003", "timestamp": 1794409855808}
+{"type": "text", "text": "1092", "timestamp": 1794409855811}
+{"type": "text", "text": ", \"generated_at", "timestamp": 1794409855832}
+{"type": "text", "text": "_utc\": \"", "timestamp": 1794409855902}
+{"type": "text", "text": "2026", "timestamp": 1794409855931}
+{"type": "text", "text": "-11-", "timestamp": 1794409856003}
+{"type": "text", "text": "11T1", "timestamp": 1794409856031}
+{"type": "text", "text": "0:16", "timestamp": 1794409856129}
+{"type": "text", "text": ":28Z", "timestamp": 1794409857929}
+{"type": "text", "text": "\", \"age_seconds", "timestamp": 1794409857930}
+{"type": "text", "text": "\": 17", "timestamp": 1794409857931}
+{"type": "text", "text": "662,", "timestamp": 1794409857931}
+{"type": "text", "text": " \"documentation_files\":", "timestamp": 1794409857931}
+{"type": "text", "text": " 642", "timestamp": 1794409857932}
+{"type": "text", "text": ", \"counts\":", "timestamp": 1794409857933}
+{"type": "text", "text": " {\"function\": ", "timestamp": 1794409857933}
+{"type": "text", "text": "1294", "timestamp": 1794409857934}
+{"type": "text", "text": "9, \"event", "timestamp": 1794409857934}
+{"type": "text", "text": "\": 18", "timestamp": 1794409857935}
+{"type": "text", "text": "16, \"", "timestamp": 1794409857943}
+{"type": "text", "text": "enum\": 9", "timestamp": 1794409857943}
+{"type": "text", "text": "67, \"", "timestamp": 1794409857944}
+{"type": "text", "text": "table\": 4", "timestamp": 1794409857944}
+{"type": "text", "text": "397,", "timestamp": 1794409857944}
+{"type": "text", "text": " \"template\": ", "timestamp": 1794409857944}
+{"type": "text", "text": "4061", "timestamp": 1794409857944}
+{"type": "text", "text": ", \"widget-method", "timestamp": 1794409857944}
+{"type": "text", "text": "\": 25", "timestamp": 1794409857945}
+{"type": "text", "text": "97}, \"", "timestamp": 1794409857945}
+{"type": "text", "text": "warning_count\": ", "timestamp": 1794409857946}
+{"type": "text", "text": "1, \"warnings", "timestamp": 1794409857946}
+{"type": "text", "text": "\": [\"LFG", "timestamp": 1794409857946}
+{"type": "text", "text": "ConstantsDocumentation.lua:", "timestamp": 1794409857946}
+{"type": "text", "text": " runtime: LFG", "timestamp": 1794409857947}
+{"type": "text", "text": "ConstantsDocumentation.lua:", "timestamp": 1794409857948}
+{"type": "text", "text": "152:", "timestamp": 1794409857948}
+{"type": "text", "text": " attempt to index field", "timestamp": 1794409857948}
+{"type": "text", "text": " 'LFGRole", "timestamp": 1794409857948}
+{"type": "text", "text": "Meta' (a", "timestamp": 1794409857948}
+{"type": "text", "text": " nil value)\"],", "timestamp": 1794409857948}
+{"type": "text", "text": " \"warnings_truncated", "timestamp": 1794409857948}
+{"type": "text", "text": "\": false}\n\nSTEP", "timestamp": 1794409857948}
+{"type": "text", "text": " 3 wow_api", "timestamp": 1794409857964}
+{"type": "text", "text": ":", "timestamp": 1794409858077}
+{"type": "tool_use", "name": "wow_api", "tool_call_id": "call_97afbf1bfe8940f2889e47f2", "input": {"action": "lookup", "name": "C_ChatInfo.SendAddonMessage"}, "timestamp": 1794409858717}
+{"type": "tool_result", "name": "wow_api", "tool_call_id": "call_97afbf1bfe8940f2889e47f2", "output": "{\"ok\": true, \"action\": \"lookup\", \"found\": true, \"name\": \"C_ChatInfo.SendAddonMessage\", \"kind\": \"function\", \"restricted\": false, \"secret\": {\"args\": \"NotAllowed\", \"returns\": false, \"conditions\": []}, \"deprecated\": false, \"documented\": true, \"source\": \"documentation\", \"namespace\": \"C_ChatInfo\", \"system\": \"ChatInfo\", \"c_api\": true, \"args\": [{\"name\": \"prefix\", \"type\": \"cstring\", \"nilable\": false}, {\"name\": \"message\", \"type\": \"cstring\", \"nilable\": false}, {\"name\": \"chatType\", \"type\": \"cstring\", \"nilable\": true}, {\"name\": \"target\", \"type\": \"cstring\", \"nilable\": true}], \"returns\": [{\"name\": \"result\", \"type\": \"SendAddonMessageResult\", \"nilable\": false}], \"flags\": {\"SecretArguments\": \"NotAllowed\"}}", "duration_ms": 92, "is_error": false, "timestamp": 1794409858810}
+{"type": "text", "text": "\n\nSTEP", "timestamp": 1794409861783}
+{"type": "text", "text": " 3 wow_api", "timestamp": 1794409861919}
+{"type": "text", "text": ": {\"ok\":", "timestamp": 1794409864205}
+{"type": "text", "text": " true, \"action", "timestamp": 1794409864207}
+{"type": "text", "text": "\": \"lookup\",", "timestamp": 1794409864207}
+{"type": "text", "text": " \"found\": true", "timestamp": 1794409864208}
+{"type": "text", "text": ", \"name\":", "timestamp": 1794409864209}
+{"type": "text", "text": " \"C_Chat", "timestamp": 1794409864210}
+{"type": "text", "text": "Info.SendAddonMessage", "timestamp": 1794409864210}
+{"type": "text", "text": "\", \"kind\":", "timestamp": 1794409864210}
+{"type": "text", "text": " \"function\", \"", "timestamp": 1794409864210}
+{"type": "text", "text": "restricted\": false", "timestamp": 1794409864210}
+{"type": "text", "text": ", \"secret\":", "timestamp": 1794409864213}
+{"type": "text", "text": " {\"args\": \"", "timestamp": 1794409864213}
+{"type": "text", "text": "NotAllowed", "timestamp": 1794409864214}
+{"type": "text", "text": "\", \"returns\":", "timestamp": 1794409864214}
+{"type": "text", "text": " false, \"conditions", "timestamp": 1794409864214}
+{"type": "text", "text": "\": []}, \"", "timestamp": 1794409864216}
+{"type": "text", "text": "deprecated\": false,", "timestamp": 1794409864216}
+{"type": "text", "text": " \"documented\":", "timestamp": 1794409864217}
+{"type": "text", "text": " true, \"source", "timestamp": 1794409864217}
+{"type": "text", "text": "\": \"documentation\",", "timestamp": 1794409864217}
+{"type": "text", "text": " \"namespace\": \"", "timestamp": 1794409864218}
+{"type": "text", "text": "C_ChatInfo", "timestamp": 1794409864218}
+{"type": "text", "text": "\", \"system\":", "timestamp": 1794409864218}
+{"type": "text", "text": " \"ChatInfo\",", "timestamp": 1794409864218}
+{"type": "text", "text": " \"c_api\":", "timestamp": 1794409864218}
+{"type": "text", "text": " true, \"args", "timestamp": 1794409864219}
+{"type": "text", "text": "\": [{\"name\":", "timestamp": 1794409864219}
+{"type": "text", "text": " \"prefix\", \"", "timestamp": 1794409864220}
+{"type": "text", "text": "type\": \"c", "timestamp": 1794409864220}
+{"type": "text", "text": "string\", \"nil", "timestamp": 1794409864220}
+{"type": "text", "text": "able\": false},", "timestamp": 1794409864221}
+{"type": "text", "text": " {\"name\": \"", "timestamp": 1794409864221}
+{"type": "text", "text": "message\", \"type", "timestamp": 1794409864222}
+{"type": "text", "text": "\": \"cstring", "timestamp": 1794409864223}
+{"type": "text", "text": "\", \"nilable", "timestamp": 1794409864223}
+{"type": "text", "text": "\": true}, {\"", "timestamp": 1794409864224}
+{"type": "text", "text": "name\": \"target", "timestamp": 1794409864224}
+{"type": "text", "text": "\", \"type\":", "timestamp": 1794409864224}
+{"type": "text", "text": " \"cstring\",", "timestamp": 1794409864224}
+{"type": "text", "text": " \"nilable\":", "timestamp": 1794409864224}
+{"type": "text", "text": " true}], \"returns", "timestamp": 1794409864224}
+{"type": "text", "text": "\": [{\"name\":", "timestamp": 1794409864224}
+{"type": "text", "text": " \"result\", \"", "timestamp": 1794409864224}
+{"type": "text", "text": "type\": \"Send", "timestamp": 1794409864224}
+{"type": "text", "text": "AddonMessageResult\",", "timestamp": 1794409864225}
+{"type": "text", "text": " \"nilable\":", "timestamp": 1794409864225}
+{"type": "text", "text": " false}], \"flags", "timestamp": 1794409864225}
+{"type": "text", "text": "\": {\"SecretArguments", "timestamp": 1794409864225}
+{"type": "text", "text": "\": \"NotAllowed", "timestamp": 1794409864225}
+{"type": "text", "text": "\"}}\n\nSTEP ", "timestamp": 1794409864225}
+{"type": "text", "text": "4 wow_new:", "timestamp": 1794409864238}
+{"type": "tool_use", "name": "wow_new", "tool_call_id": "call_714ff9ea7b4340a7b53dbda6", "input": {"dest": "/tmp/wow-gate-20261111/work/Throwaway", "modules": ["core", "log", "sync", "trust", "window", "bridge"], "name": "Throwaway", "title": "Throwaway"}, "timestamp": 1794409865416}
+{"type": "tool_result", "name": "wow_new", "tool_call_id": "call_714ff9ea7b4340a7b53dbda6", "output": "{\"ok\": true, \"addon\": \"Throwaway\", \"path\": \"/tmp/wow-gate-20261111/work/Throwaway\", \"modules\": [\"core\", \"log\", \"sync\", \"trust\", \"window\", \"bridge\"], \"slash\": \"/throwaway\", \"files\": [\"Core/Namespace.lua\", \"Core/Dispatch.lua\", \"Core/Clock.lua\", \"Core/Codec.lua\", \"Core/Store.lua\", \"Core/Slash.lua\", \"Core/Log.lua\", \"Core/Reduce.lua\", \"Core/Chunk.lua\", \"Core/Throttle.lua\", \"Core/Restrict.lua\", \"Core/Sync.lua\", \"Core/Trust.lua\", \"UI/Theme.lua\", \"UI/Window.lua\", \"Bridge.lua\", \"Inbox.lua\", \"Throwaway.toc\", \"Tests/scaffold.lua\"]}", "duration_ms": 6, "is_error": false, "timestamp": 1794409865422}
+{"type": "text", "text": "\n\nSTEP 4 wow", "timestamp": 1794409870061}
+{"type": "text", "text": "_new: {\"ok", "timestamp": 1794409870133}
+{"type": "text", "text": "\": true, \"", "timestamp": 1794409870154}
+{"type": "text", "text": "addon\": \"Throw", "timestamp": 1794409870205}
+{"type": "text", "text": "away\", \"path", "timestamp": 1794409870312}
+{"type": "text", "text": "\": \"/tmp/w", "timestamp": 1794409870350}
+{"type": "text", "text": "ow-gate-", "timestamp": 1794409870358}
+{"type": "text", "text": "2026", "timestamp": 1794409870418}
+{"type": "text", "text": "1111", "timestamp": 1794409870466}
+{"type": "text", "text": "/work/Throwaway", "timestamp": 1794409870528}
+{"type": "text", "text": "\", \"modules\":", "timestamp": 1794409870559}
+{"type": "text", "text": " [\"core\", \"", "timestamp": 1794409870602}
+{"type": "text", "text": "log\", \"sync", "timestamp": 1794409870708}
+{"type": "text", "text": "\", \"trust\",", "timestamp": 1794409870708}
+{"type": "text", "text": " \"window\", \"", "timestamp": 1794409870818}
+{"type": "text", "text": "bridge\"], \"slash", "timestamp": 1794409870820}
+{"type": "text", "text": "\": \"/throwaway", "timestamp": 1794409870856}
+{"type": "text", "text": "\", \"files\":", "timestamp": 1794409870899}
+{"type": "text", "text": " [\"Core/Namespace", "timestamp": 1794409870932}
+{"type": "text", "text": ".lua\", \"Core", "timestamp": 1794409870977}
+{"type": "text", "text": "/Dispatch.lua\",", "timestamp": 1794409871032}
+{"type": "text", "text": " \"Core/Clock", "timestamp": 1794409871109}
+{"type": "text", "text": ".lua\", \"Core", "timestamp": 1794409871124}
+{"type": "text", "text": "/Codec.lua\",", "timestamp": 1794409871162}
+{"type": "text", "text": " \"Core/Store", "timestamp": 1794409871231}
+{"type": "text", "text": ".lua\", \"Core", "timestamp": 1794409871349}
+{"type": "text", "text": "/Slash.lua\",", "timestamp": 1794409871351}
+{"type": "text", "text": " \"Core/Log", "timestamp": 1794409871398}
+{"type": "text", "text": ".lua\", \"Core", "timestamp": 1794409871453}
+{"type": "text", "text": "/Reduce.lua\",", "timestamp": 1794409871569}
+{"type": "text", "text": " \"Core/Chunk", "timestamp": 1794409871600}
+{"type": "text", "text": ".lua\", \"Core", "timestamp": 1794409871633}
+{"type": "text", "text": "/Throttle.lua\",", "timestamp": 1794409871692}
+{"type": "text", "text": " \"Core/Restrict", "timestamp": 1794409871774}
+{"type": "text", "text": ".lua\", \"Core", "timestamp": 1794409871781}
+{"type": "text", "text": "/Sync.lua\",", "timestamp": 1794409871880}
+{"type": "text", "text": " \"Core/Trust", "timestamp": 1794409871900}
+{"type": "text", "text": ".lua\", \"UI", "timestamp": 1794409871965}
+{"type": "text", "text": "/Theme.lua\",", "timestamp": 1794409871975}
+{"type": "text", "text": " \"UI/Window", "timestamp": 1794409872019}
+{"type": "text", "text": ".lua\", \"Bridge", "timestamp": 1794409872058}
+{"type": "text", "text": ".lua\", \"In", "timestamp": 1794409872108}
+{"type": "text", "text": "box.lua\", \"", "timestamp": 1794409872151}
+{"type": "text", "text": "Throwaway.toc", "timestamp": 1794409872207}
+{"type": "text", "text": "\", \"Tests/sc", "timestamp": 1794409872251}
+{"type": "text", "text": "affold.lua\"]}\n\n", "timestamp": 1794409872311}
+{"type": "text", "text": "STEP 5 wow", "timestamp": 1794409872406}
+{"type": "text", "text": "_check:", "timestamp": 1794409872409}
+{"type": "tool_use", "name": "wow_check", "tool_call_id": "call_bcc5af1c40b94fd093c8f085", "input": {"path": "/tmp/wow-gate-20261111/work/Throwaway"}, "timestamp": 1794409873473}
+{"type": "tool_result", "name": "wow_check", "tool_call_id": "call_bcc5af1c40b94fd093c8f085", "output": "{\"ok\": true, \"addon\": \"Throwaway\", \"path\": \"/tmp/wow-gate-20261111/work/Throwaway\", \"flavor\": \"forever\", \"build\": \"1.60.1.70888\", \"verdict\": \"fail\", \"error_count\": 2, \"warning_count\": 1, \"findings\": [{\"severity\": \"warning\", \"code\": \"restricted-api\", \"file\": \"Core/Sync.lua\", \"line\": 26, \"message\": \"'UnitName' is restricted or secret-returning in build 1.60.1.70888 (guarded).\", \"hint\": \"Guard with C_RestrictedActions.IsAddOnRestrictionActive, InCombatLockdown, issecretvalue, or pcall.\"}, {\"severity\": \"error\", \"code\": \"restricted-api\", \"file\": \"Bridge.lua\", \"line\": 47, \"message\": \"'UnitName' is restricted or secret-returning in build 1.60.1.70888 and is called without a restriction/secret guard.\", \"hint\": \"Guard with C_RestrictedActions.IsAddOnRestrictionActive, InCombatLockdown, issecretvalue, or pcall.\"}, {\"severity\": \"error\", \"code\": \"restricted-api\", \"file\": \"Bridge.lua\", \"line\": 50, \"message\": \"'UnitName' is restricted or secret-returning in build 1.60.1.70888 and is called without a restriction/secret guard.\", \"hint\": \"Guard with C_RestrictedActions.IsAddOnRestrictionActive, InCombatLockdown, issecretvalue, or pcall.\"}]}", "duration_ms": 455, "is_error": false, "timestamp": 1794409873928}
+{"type": "text", "text": "\n\nSTEP ", "timestamp": 1794409879766}
+{"type": "text", "text": "5 wow_check:", "timestamp": 1794409879766}
+{"type": "text", "text": " {\"ok\": true", "timestamp": 1794409879809}
+{"type": "text", "text": ", \"addon\":", "timestamp": 1794409879918}
+{"type": "text", "text": " \"Throwaway\",", "timestamp": 1794409879921}
+{"type": "text", "text": " \"path\": \"/", "timestamp": 1794409879948}
+{"type": "text", "text": "tmp/wow-g", "timestamp": 1794409879996}
+{"type": "text", "text": "ate-20", "timestamp": 1794409880167}
+{"type": "text", "text": "2611", "timestamp": 1794409880170}
+{"type": "text", "text": "11/work/", "timestamp": 1794409880263}
+{"type": "text", "text": "Throwaway\", \"", "timestamp": 1794409880266}
+{"type": "text", "text": "flavor\": \"", "timestamp": 1794409880322}
+{"type": "text", "text": "forever\", \"", "timestamp": 1794409880346}
+{"type": "text", "text": "build\": \"1", "timestamp": 1794409880405}
+{"type": "text", "text": ".60.", "timestamp": 1794409880431}
+{"type": "text", "text": "1.70", "timestamp": 1794409880479}
+{"type": "text", "text": "888\",", "timestamp": 1794409880531}
+{"type": "text", "text": " \"verdict\":", "timestamp": 1794409880576}
+{"type": "text", "text": " \"fail\", \"", "timestamp": 1794409880623}
+{"type": "text", "text": "error_count\": ", "timestamp": 1794409880681}
+{"type": "text", "text": "2, \"warning", "timestamp": 1794409880784}
+{"type": "text", "text": "_count\": 1", "timestamp": 1794409880784}
+{"type": "text", "text": ", \"findings", "timestamp": 1794409880800}
+{"type": "text", "text": "\": [{\"severity", "timestamp": 1794409880897}
+{"type": "text", "text": "\": \"warning\",", "timestamp": 1794409880897}
+{"type": "text", "text": " \"code\": \"", "timestamp": 1794409880953}
+{"type": "text", "text": "restricted-api\",", "timestamp": 1794409880995}
+{"type": "text", "text": " \"file\": \"", "timestamp": 1794409881062}
+{"type": "text", "text": "Core/Sync.lua", "timestamp": 1794409881084}
+{"type": "text", "text": "\", \"line\":", "timestamp": 1794409881131}
+{"type": "text", "text": " 26,", "timestamp": 1794409881200}
+{"type": "text", "text": " \"message\": \"'", "timestamp": 1794409881312}
+{"type": "text", "text": "UnitName' is", "timestamp": 1794409881313}
+{"type": "text", "text": " restricted or secret-return", "timestamp": 1794409881346}
+{"type": "text", "text": "ing in build ", "timestamp": 1794409881378}
+{"type": "text", "text": "1.60", "timestamp": 1794409881438}
+{"type": "text", "text": ".1.7", "timestamp": 1794409881451}
+{"type": "text", "text": "0888", "timestamp": 1794409881500}
+{"type": "text", "text": " (guarded)", "timestamp": 1794409881557}
+{"type": "text", "text": ".\", \"hint\":", "timestamp": 1794409881604}
+{"type": "text", "text": " \"Guard with C", "timestamp": 1794409881651}
+{"type": "text", "text": "_Restricted", "timestamp": 1794409881709}
+{"type": "text", "text": "Actions.IsAddOn", "timestamp": 1794409881763}
+{"type": "text", "text": "RestrictionActive, In", "timestamp": 1794409881843}
+{"type": "text", "text": "CombatLockdown,", "timestamp": 1794409881844}
+{"type": "text", "text": " issecretvalue,", "timestamp": 1794409881876}
+{"type": "text", "text": " or pcall.\"", "timestamp": 1794409881929}
+{"type": "text", "text": "}, {\"severity", "timestamp": 1794409881972}
+{"type": "text", "text": "\": \"error\",", "timestamp": 1794409882012}
+{"type": "text", "text": " \"code\": \"", "timestamp": 1794409882060}
+{"type": "text", "text": "restricted-api\",", "timestamp": 1794409882113}
+{"type": "text", "text": " \"file\": \"", "timestamp": 1794409882192}
+{"type": "text", "text": "Bridge.lua\", \"", "timestamp": 1794409882204}
+{"type": "text", "text": "line\": 4", "timestamp": 1794409882255}
+{"type": "text", "text": "7, \"message", "timestamp": 1794409882361}
+{"type": "text", "text": "\": \"'UnitName", "timestamp": 1794409882376}
+{"type": "text", "text": "' is restricted or", "timestamp": 1794409882389}
+{"type": "text", "text": " secret-returning in", "timestamp": 1794409882444}
+{"type": "text", "text": " build 1.", "timestamp": 1794409882497}
+{"type": "text", "text": "60.1", "timestamp": 1794409882545}
+{"type": "text", "text": ".708", "timestamp": 1794409882573}
+{"type": "text", "text": "88 and is", "timestamp": 1794409882624}
+{"type": "text", "text": " called without a restriction", "timestamp": 1794409882682}
+{"type": "text", "text": "/secret guard.\",", "timestamp": 1794409882719}
+{"type": "text", "text": " \"hint\": \"", "timestamp": 1794409882761}
+{"type": "text", "text": "Guard with C_R", "timestamp": 1794409882896}
+{"type": "text", "text": "estrictedActions", "timestamp": 1794409882896}
+{"type": "text", "text": ".IsAddOnRestriction", "timestamp": 1794409882897}
+{"type": "text", "text": "Active, InCombat", "timestamp": 1794409882948}
+{"type": "text", "text": "Lockdown, is", "timestamp": 1794409882994}
+{"type": "text", "text": "secretvalue, or", "timestamp": 1794409883056}
+{"type": "text", "text": " pcall.\"},", "timestamp": 1794409883079}
+{"type": "text", "text": " {\"severity\":", "timestamp": 1794409883134}
+{"type": "text", "text": " \"error\", \"", "timestamp": 1794409883195}
+{"type": "text", "text": "code\": \"restr", "timestamp": 1794409883218}
+{"type": "text", "text": "icted-api\", \"", "timestamp": 1794409883268}
+{"type": "text", "text": "file\": \"Bridge", "timestamp": 1794409883315}
+{"type": "text", "text": ".lua\", \"line", "timestamp": 1794409883411}
+{"type": "text", "text": "\": 50", "timestamp": 1794409883415}
+{"type": "text", "text": ", \"message\":", "timestamp": 1794409883502}
+{"type": "text", "text": " \"'UnitName'", "timestamp": 1794409883536}
+{"type": "text", "text": " is restricted or secret", "timestamp": 1794409883576}
+{"type": "text", "text": "-returning in build", "timestamp": 1794409883629}
+{"type": "text", "text": " 1.6", "timestamp": 1794409883701}
+{"type": "text", "text": "0.1.", "timestamp": 1794409883722}
+{"type": "text", "text": "7088", "timestamp": 1794409883762}
+{"type": "text", "text": "8 and is called", "timestamp": 1794409883813}
+{"type": "text", "text": " without a restriction/", "timestamp": 1794409883963}
+{"type": "text", "text": "secret guard.\", \"", "timestamp": 1794409883968}
+{"type": "text", "text": "hint\": \"Guard", "timestamp": 1794409883968}
+{"type": "text", "text": " with C_Rest", "timestamp": 1794409884009}
+{"type": "text", "text": "rictedActions.Is", "timestamp": 1794409884079}
+{"type": "text", "text": "AddOnRestrictionActive", "timestamp": 1794409884088}
+{"type": "text", "text": ", InCombatLock", "timestamp": 1794409884136}
+{"type": "text", "text": "down, issecret", "timestamp": 1794409884184}
+{"type": "text", "text": "value, or p", "timestamp": 1794409884238}
+{"type": "text", "text": "call.\"}]}\n\n", "timestamp": 1794409884289}
+{"type": "text", "text": "GATE FAILED AT", "timestamp": 1794409884326}
+{"type": "text", "text": " STEP 5\n\n", "timestamp": 1794409884462}
+{"type": "text", "text": "wow_check returned", "timestamp": 1794409884473}
+{"type": "text", "text": " verdict \"fail\"", "timestamp": 1794409884474}
+{"type": "text", "text": " (2 errors):", "timestamp": 1794409884525}
+{"type": "text", "text": " ungu", "timestamp": 1794409884562}
+{"type": "text", "text": "arded `UnitName", "timestamp": 1794409884617}
+{"type": "text", "text": "` calls in", "timestamp": 1794409884658}
+{"type": "text", "text": " Bridge.lua lines", "timestamp": 1794409884721}
+{"type": "text", "text": " 47 and", "timestamp": 1794409884746}
+{"type": "text", "text": " 50.", "timestamp": 1794409884817}
+{"type": "text", "text": " Per the gate", "timestamp": 1794409884841}
+{"type": "text", "text": " rules", "timestamp": 1794409884879}
+{"type": "text", "text": " I", "timestamp": 1794409884981}
+{"type": "text", "text": " stopped here and", "timestamp": 1794409884981}
+{"type": "text", "text": " did not run", "timestamp": 1794409885029}
+{"type": "text", "text": " steps 6–", "timestamp": 1794409885067}
+{"type": "text", "text": "11.", "timestamp": 1794409885117}
+{"type": "result", "session_id": "local-26cd0b82f1fcc585323cca9ae7c72636abde0f7d45bd71b4f01817fb3ba03456", "exit_code": 0, "text": "STEP 5 wow_check: {\"ok\": true, \"addon\": \"Throwaway\", \"path\": \"/tmp/wow-gate-20261111/work/Throwaway\", \"flavor\": \"forever\", \"build\": \"1.60.1.70888\", \"verdict\": \"fail\", \"error_count\": 2, \"warning_count\": 1, \"findings\": [{\"severity\": \"warning\", \"code\": \"restricted-api\", \"file\": \"Core/Sync.lua\", \"line\": 26, \"message\": \"'UnitName' is restricted or secret-returning in build 1.60.1.70888 (guarded).\", \"hint\": \"Guard with C_RestrictedActions.IsAddOnRestrictionActive, InCombatLockdown, issecretvalue, or pcall.\"}, {\"severity\": \"error\", \"code\": \"restricted-api\", \"file\": \"Bridge.lua\", \"line\": 47, \"message\": \"'UnitName' is restricted or secret-returning in build 1.60.1.70888 and is called without a restriction/secret guard.\", \"hint\": \"Guard with C_RestrictedActions.IsAddOnRestrictionActive, InCombatLockdown, issecretvalue, or pcall.\"}, {\"severity\": \"error\", \"code\": \"restricted-api\", \"file\": \"Bridge.lua\", \"line\": 50, \"message\": \"'UnitName' is restricted or secret-returning in build 1.60.1.70888 and is called without a restriction/secret guard.\", \"hint\": \"Guard with C_RestrictedActions.IsAddOnRestrictionActive, InCombatLockdown, issecretvalue, or pcall.\"}]}\n\nGATE FAILED AT STEP 5\n\nwow_check returned verdict \"fail\" (2 errors): unguarded `UnitName` calls in Bridge.lua lines 47 and 50. Per the gate rules I stopped here and did not run steps 6–11.", "tokens": {"input": 147230, "output": 2174, "total": 149404, "cache_read": 125056, "cache_write": 0}, "duration_ms": 55308, "timestamp": 1794409885221}

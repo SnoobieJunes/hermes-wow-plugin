@@ -63,3 +63,26 @@ def test_no_setting_searches_the_default_locations() -> None:
     register_plugin(ctx)
     result = json.loads(ctx.handlers["wow_env"]({}))
     assert result["searched"] == list(DEFAULT_ROOTS)
+
+
+def test_wow_root_is_the_install_root_too(tmp_path: Path) -> None:
+    root = tmp_path / "WoW"
+    _write_install(root)
+    ctx = _Ctx({"wow_root": str(root)})
+    register_plugin(ctx)
+    saved = json.loads(ctx.handlers["wow_savedvars"]({"addon": "Guildhall", "account": "ACCOUNT1"}))
+    assert saved["ok"] is True, saved
+    assert "GuildhallDB" in saved["data"]
+
+
+def test_call_root_targets_one_install(tmp_path: Path) -> None:
+    root = tmp_path / "WoW"
+    _write_install(root)
+    ctx = _Ctx({})
+    register_plugin(ctx)
+    saved = json.loads(
+        ctx.handlers["wow_savedvars"](
+            {"addon": "Guildhall", "account": "ACCOUNT1", "root": str(root)}
+        )
+    )
+    assert saved["ok"] is True, saved

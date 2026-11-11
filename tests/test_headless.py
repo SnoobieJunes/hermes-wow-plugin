@@ -849,3 +849,24 @@ def test_guildhall_loads_in_world_and_savedvars_python_containers_round_trip() -
         export_saved_value(cyc, var_name="CycDB")
     with pytest.raises(SavedVariablesError):
         import_saved_value(rt, cyc)
+
+
+def test_string_namespace_keeps_the_lua_string_library() -> None:
+    data = copy.deepcopy(minimal_api_index().data)
+    data["entries"]["function"]["string.lower"] = {
+        "name": "string.lower",
+        "kind": "function",
+        "namespace": "string",
+        "system": None,
+        "args": [],
+        "returns": [{"type": "string"}],
+        "flags": {},
+        "c_api": True,
+        "restricted": False,
+        "secret": {"args": None, "returns": False, "conditions": []},
+        "deprecated": False,
+        "documented": True,
+        "source": "test",
+    }
+    client = World(ApiIndex(data)).client("Player", rank=0)
+    assert client.eval('string.lower("Ab")') == "ab"

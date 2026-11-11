@@ -9,7 +9,7 @@ Load this skill when building or fixing a World of Warcraft: Forever addon.
 
 ## Workflow
 
-In order: `wow_env` → `wow_api` status (sync if the index is stale) → `wow_new` → write code, looking every call and event up with `wow_api` lookup first → `wow_check` until the verdict is `pass` → `wow_test` → `wow_install` (the user approves the write) → ask the user to `/reload` → `wow_errors` → fix and repeat.
+In order: `wow_env` → `wow_api` status (sync if the index is stale) → `wow_new` → write code, looking every call and event up with `wow_api` lookup first → `wow_check` until the verdict is `pass` → `wow_test` → `wow_install` (the user approves the write) → ask the user to `/reload` → `wow_errors` → fix and repeat. Pass `root` when the install is not the default World of Warcraft folder; that call searches only there.
 
 `/wow status` and `hermes wow status` print install, build, and index state without choosing a tool. `hermes wow check <path>` exits non-zero when the verdict is `fail`.
 

@@ -243,6 +243,10 @@ WOW_ERRORS_SCHEMA: dict[str, Any] = {
                 "type": "string",
                 "description": "Optional addon name filter applied to captured errors.",
             },
+            "root": {
+                "type": "string",
+                "description": "Optional WoW install folder. When set, search only there.",
+            },
         },
         "additionalProperties": False,
     },
@@ -287,6 +291,10 @@ WOW_SAVEDVARS_SCHEMA: dict[str, Any] = {
                     "Optional dotted path into the parsed data. List indexes are 0-based."
                 ),
             },
+            "root": {
+                "type": "string",
+                "description": "Optional WoW install folder. When set, search only there.",
+            },
         },
         "required": ["addon"],
         "additionalProperties": False,
@@ -323,6 +331,10 @@ WOW_INSTALL_SCHEMA: dict[str, Any] = {
             "force": {
                 "type": "boolean",
                 "description": "Install even when wow_check verdict is fail. Default false.",
+            },
+            "root": {
+                "type": "string",
+                "description": "Optional WoW install folder. When set, install only there.",
             },
         },
         "required": ["path"],
@@ -370,6 +382,10 @@ WOW_BRIDGE_SCHEMA: dict[str, Any] = {
                 "type": "string",
                 "enum": ["json", "discord"],
                 "description": "discord adds one line per record. The tool still returns JSON.",
+            },
+            "root": {
+                "type": "string",
+                "description": "Optional WoW install folder. When set, read and write only there.",
             },
         },
         "required": ["action"],
@@ -506,6 +522,64 @@ class ForgeTools:
         self._configured_flavor = configured_flavor
         self._configured_source = configured_source
 
+    def _roots(self) -> list[str] | None:
+        """Return the install roots a call should search when it names no root.
+
+        Why this exists: ``wow_root`` must apply to every tool that reads the game
+            folder, not only ``wow_env``. An injected ``default_roots`` still wins
+            when no setting is set, so tests stay hermetic.
+        Returns: one-element list when ``wow_root`` is set, the injected roots, or
+            ``None`` so the caller falls back to the two default locations.
+        Failure modes: none.
+        """
+        if self._configured_root:
+            return [self._configured_root]
+        if self._default_roots is not None:
+            return list(self._default_roots)
+        return None
+
+    def _explicit_root(self, arguments: Mapping[str, Any]) -> str | dict[str, Any] | None:
+        """Return a call's ``root`` when it names one install folder.
+
+        Why this exists: a session must target a temporary install without changing
+            the user's ``wow_root`` setting.
+        Args: arguments, the tool object.
+        Returns: the path, ``None`` when omitted, or an error result when the type is wrong.
+        Failure modes: none; a bad type is an error result, not an exception.
+        """
+        root = arguments.get("root")
+        if root is None or root == "":
+            return None
+        if not isinstance(root, str):
+            return error_result(
+                "bad-argument",
+                f"root must be a string path, got {type(root).__name__}",
+                'Pass root as a string, for example {"root": "/path/to/World of Warcraft"}.',
+            )
+        return root.strip()
+
+    def _call_roots(
+        self, arguments: Mapping[str, Any], *, fallback_default: bool
+    ) -> list[str] | dict[str, Any] | None:
+        """Return the install roots for one call, honouring an explicit ``root``.
+
+        Why this exists: install, SavedVariables, errors and the bridge must search
+            the same folder the caller named, before ``wow_root`` and the defaults.
+        Args: arguments, the tool object. fallback_default, whether no root means
+            the two stock locations (install and bridge) or ``None`` (readers).
+        Returns: a root list, an error result, or ``None``.
+        Failure modes: a non-string root is an error result.
+        """
+        explicit = self._explicit_root(arguments)
+        if isinstance(explicit, dict):
+            return explicit
+        if explicit:
+            return [explicit]
+        roots = self._roots()
+        if roots is not None:
+            return roots
+        return list(DEFAULT_ROOTS) if fallback_default else None
+
     def env_result(self, args: object = None) -> dict[str, Any]:
         """Return the ``wow_env`` result as plain data.
 
@@ -547,7 +621,7 @@ class ForgeTools:
             # [2026-11-11 T-039] A configured wow_root is the only place searched.
             # An explicit root argument still wins, so a call can look elsewhere.
             if self._configured_root:
-                roots = [self._configured_root]
+                roots = self._roots()
             else:
                 roots = self._default_roots
         elif not isinstance(root, str):
@@ -982,10 +1056,13 @@ class ForgeTools:
                     f"{key} must be a string, got {type(val).__name__}",
                     _ERRORS_CALL_HINT,
                 )
+        chosen = self._call_roots(arguments, fallback_default=False)
+        if isinstance(chosen, dict):
+            return chosen
         try:
             report = read_forge_probe_errors(
                 self._fs,
-                roots=self._default_roots,
+                roots=chosen,
                 flavor=arguments.get("flavor"),
                 account=arguments.get("account"),
                 addon_filter=arguments.get("addon"),
@@ -1049,11 +1126,14 @@ class ForgeTools:
                     f"{key} must be a string, got {type(value).__name__}",
                     _SAVEDVARS_CALL_HINT,
                 )
+        chosen = self._call_roots(args, fallback_default=False)
+        if isinstance(chosen, dict):
+            return chosen
         try:
             report = read_savedvars(
                 self._fs,
                 addon=addon.strip(),
-                roots=self._default_roots,
+                roots=chosen,
                 flavor=args.get("flavor"),
                 account=args.get("account"),
                 character=args.get("character"),
@@ -1163,7 +1243,10 @@ class ForgeTools:
             )
         try:
             folder = flavor_folder(flavor if isinstance(flavor, str) else None)
-            roots = self._default_roots if self._default_roots is not None else DEFAULT_ROOTS
+            chosen = self._call_roots(args, fallback_default=True)
+            if isinstance(chosen, dict):
+                return chosen
+            roots = chosen or list(DEFAULT_ROOTS)
             addons_dir = locate_addons_dir(self._fs, roots, folder)
             data_dir = self._data_dir if self._data_dir is not None else default_data_dir()
             installed = install_addon(
@@ -1247,7 +1330,10 @@ class ForgeTools:
                     f"{key} must be a string, got {type(value).__name__}",
                     _BRIDGE_CALL_HINT,
                 )
-        roots = self._default_roots if self._default_roots is not None else DEFAULT_ROOTS
+        chosen = self._call_roots(args, fallback_default=True)
+        if isinstance(chosen, dict):
+            return chosen
+        roots = chosen or list(DEFAULT_ROOTS)
         cursor_dir = self._cursor_directory()
         try:
             if action == "pull":

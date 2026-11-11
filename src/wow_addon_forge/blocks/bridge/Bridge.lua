@@ -47,12 +47,29 @@ local function self_name()
     if type(UnitName) ~= "function" then
         return ""
     end
-    local name, realm = UnitName("player")
-    if type(name) ~= "string" then
+    -- [2026-11-11 T-041] The live 1.60.1 index marks UnitName restricted /
+    -- secret-returning, so the call goes through pcall and a secret result is
+    -- dropped instead of concatenated (the fresh-session gate caught the
+    -- unguarded call: wow_check verdict fail, Bridge.lua restricted-api).
+    local ok, name, realm = pcall(UnitName, "player")
+    if not ok or type(name) ~= "string" then
+        return ""
+    end
+    local secret_ok, secret = pcall(issecretvalue, name)
+    if secret_ok and secret then
         return ""
     end
     if type(realm) ~= "string" or realm == "" then
-        realm = type(GetRealmName) == "function" and GetRealmName() or ""
+        realm = ""
+        if type(GetRealmName) == "function" then
+            local realm_ok, realm_name = pcall(GetRealmName)
+            if realm_ok and type(realm_name) == "string" then
+                local realm_secret_ok, realm_secret = pcall(issecretvalue, realm_name)
+                if not (realm_secret_ok and realm_secret) then
+                    realm = realm_name
+                end
+            end
+        end
     end
     if realm ~= "" and not name:find("-", 1, true) then
         return name .. "-" .. realm

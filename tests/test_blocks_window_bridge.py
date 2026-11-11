@@ -175,3 +175,23 @@ def test_every_block_passes_wow_check(tmp_path: Path) -> None:
     report = check_addon(addon, index=minimal_api_index())
     assert report["verdict"] == "pass", report["findings"]
     shutil.rmtree(addon)
+
+
+def test_every_block_passes_when_unitname_is_restricted(tmp_path: Path) -> None:
+    # [2026-11-11 T-041] Regression: the live 1.60.1 index marks UnitName
+    # restricted/secret-returning, and the bridge block's unguarded call made a
+    # scaffolded every-block addon fail wow_check in the fresh-session gate.
+    # The minimal index does not mark it, so mark it here the way the live
+    # index does; a guarded call is a warning and the verdict stays pass.
+    import copy
+
+    from wow_addon_forge.apidocs import ApiIndex
+
+    addon = _instantiate(tmp_path / "WoW")
+    data = copy.deepcopy(dict(minimal_api_index().data))
+    data["entries"]["function"]["UnitName"]["restricted"] = True
+    report = check_addon(addon, index=ApiIndex(data))
+    errors = [item for item in report["findings"] if item["severity"] == "error"]
+    assert errors == [], report["findings"]
+    assert report["verdict"] == "pass", report["findings"]
+    shutil.rmtree(addon)

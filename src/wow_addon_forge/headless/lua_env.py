@@ -863,11 +863,21 @@ return function(bridge)
     end
 
     function controller.install_namespace(ns_name, methods_table)
-        local ns = {}
+        -- [2026-11-11 T-041] The live API index has a `string` namespace. Replacing
+        -- the Lua string library with an empty stub table makes string.lower return
+        -- nil, so a scaffolded addon fails wow_check. Keep a table that already
+        -- exists and only fill methods it does not have.
+        local existing = rawget(_G, ns_name)
+        local ns = type(existing) == "table" and existing or {}
         if methods_table ~= nil then
             for key, value in pairs(methods_table) do
-                rawset(ns, key, wrap_callable(value))
+                if rawget(ns, key) == nil then
+                    rawset(ns, key, wrap_callable(value))
+                end
             end
+        end
+        if type(existing) == "table" then
+            return ns
         end
         setmetatable(ns, {
             __index = function(t, key)
