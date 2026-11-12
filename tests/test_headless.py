@@ -870,3 +870,39 @@ def test_string_namespace_keeps_the_lua_string_library() -> None:
     }
     client = World(ApiIndex(data)).client("Player", rank=0)
     assert client.eval('string.lower("Ab")') == "ab"
+
+
+def test_headless_rejects_binary_addon_chunk_and_eval(fake_fs_factory: Any) -> None:
+    # [2026-11-11 T-060] Binary chunks (\x1bLua) in an addon file are rejected in Python
+    # before run_addon_chunk, recorded as a compile failure, and followed by remaining files;
+    # direct controller.run_addon_chunk and client.eval reject them as well.
+    files = {
+        "/addons/BinAddon/BinAddon.toc": (
+            "## Interface: 16001\n## Title: BinAddon\n\nHandler.lua\nBin.lua\nAfter.lua\n"
+        ),
+        "/addons/BinAddon/Handler.lua": (
+            "SeenErrors = {}\n"
+            "seterrorhandler(function(msg) SeenErrors[#SeenErrors + 1] = msg end)\n"
+        ),
+        "/addons/BinAddon/Bin.lua": "\x1bLuaQ\x00\x01\x04\x08\x04\x08\x00",
+        "/addons/BinAddon/After.lua": 'AfterBin = "still-ran"\n',
+    }
+    alice = World(fs=fake_fs_factory(files)).client("Alice")
+    alice.load_addon("/addons/BinAddon")
+    assert any(
+        rec.message == "compile: BinAddon/Bin.lua: binary chunks are not allowed"
+        for rec in alice.errors
+    )
+    assert alice.eval("SeenErrors[1]") == (
+        "compile: BinAddon/Bin.lua: binary chunks are not allowed"
+    )
+    assert alice.eval("AfterBin") == "still-ran"
+    direct_ok = alice.controller.run_addon_chunk(
+        "\x1bLuaQ\x00", "Direct/Bin.lua", "Direct", alice.runtime.table()
+    )
+    assert direct_ok is False
+    assert any("Direct/Bin.lua: binary chunks are not allowed" in r.message for r in alice.errors)
+    with pytest.raises(LuaChunkError) as exc:
+        alice.eval("\x1bLuaQ\x00")
+    assert exc.value.phase == "compile"
+    assert "binary chunks are not allowed" in exc.value.message

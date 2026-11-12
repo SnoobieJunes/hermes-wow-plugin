@@ -183,3 +183,27 @@ def test_link_mode_symlinks_and_second_install_does_not_delete_source(tmp_path: 
     assert (source / "Core.lua").is_file()
     assert not dest.is_symlink()
     assert (dest / "Core.lua").read_text(encoding="utf-8") == _CLEAN_LUA
+
+
+def test_savedvars_rejects_binary_chunk_and_default_data_dir_follows_profile(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    import sys
+    import types
+
+    import pytest
+
+    from wow_addon_forge.install import default_data_dir
+    from wow_addon_forge.savedvars import SavedVarsReadError, parse_savedvars_lua
+
+    # [2026-11-11 T-060] Binary chunks (\x1bLua) must fail before SavedVariables VM execution.
+    with pytest.raises(SavedVarsReadError) as exc:
+        parse_savedvars_lua("\x1bLuaQ\x00\x01\x04\x08\x04\x08\x00")
+    assert exc.value.code == "bad-savedvars"
+    assert "binary chunks are not allowed" in exc.value.message
+
+    profile_home = tmp_path / "profiles" / "officer"
+    fake_constants = types.ModuleType("hermes_constants")
+    fake_constants.get_hermes_home = lambda: profile_home  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "hermes_constants", fake_constants)
+    assert default_data_dir() == profile_home / "cache" / "wow-addon-forge" / "backups"

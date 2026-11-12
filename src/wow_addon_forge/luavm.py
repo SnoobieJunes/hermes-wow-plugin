@@ -3,31 +3,86 @@
 Invariants owned by this file:
 - Every Lua check in the plugin runs in Lua 5.1, the language the WoW client embeds, and never in
   the system interpreter (5.5 on the development machine, which accepts syntax the game rejects).
-- A sandboxed VM exposes only what the game exposes: no ``io``, no ``os`` table, no module loading.
-  Addon code that reaches for them fails here the way it fails in game.
+- A sandboxed VM exposes only what the game exposes: no ``io``, no ``os`` table, no module loading,
+  no ``string.dump``, no precompiled binary chunks (``\27Lua``) in ``loadstring``/``load``, and no
+  attribute access on Python objects across the ``lupa`` boundary. Addon code that reaches for them
+  fails here the way it fails in game.
 - ``lupa`` is imported lazily, so the plugin still loads without it and says exactly what is
   missing instead of degrading silently (docs/SPEC-PLUGIN.md §12).
-- Addon files are executed through ``run_chunk``, which reports compile and runtime failures as
-  ``LuaChunkError`` instead of letting a lupa error type leak.
+- Addon files are executed through ``run_chunk``, which rejects ``\x1b``-prefixed binary source in
+  Python and reports compile and runtime failures as ``LuaChunkError`` instead of letting a lupa
+  error type leak.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+_LUA_BINARY_PREFIX = "\x1b"
+_BINARY_CHUNK_MESSAGE = "binary chunks are not allowed"
+
 
 class LuaVMUnavailableError(RuntimeError):
     """Raised when the embedded Lua 5.1 VM cannot be created (``lupa`` missing or too old)."""
 
 
-# [2026-11-11 T-002] The WoW client has no `os` table: it exposes date/time/difftime as globals,
-# and none of io/package/require/dofile/loadfile/module. `python` is lupa's bridge back into the
-# host and must never be reachable from addon code. `debugstack` is the game's name for a
-# traceback; the full `debug` library is not available to addons.
+# [2026-11-11 T-060] lupa's register_eval/register_builtins flags do not prevent Lua from
+# indexing special attributes (such as __globals__ or __class__) on a Python callable or object
+# that crosses into the VM. Raising AttributeError unconditionally lets Lua call Python callbacks
+# stored in Lua tables while refusing every attribute read and write on Python objects.
+def _deny_python_attributes(obj: Any, attr_name: Any, is_setting: bool) -> str:
+    raise AttributeError(f"attribute access on Python objects is not allowed: {attr_name!r}")
+
+
+# [2026-11-11 T-060] The WoW client has no `os` table (exposing date/time/difftime as globals),
+# none of io/package/require/dofile/loadfile/module/debug, no `string.dump`, and refuses
+# precompiled Lua 5.1 binary chunks (`\27Lua`), whose C undumper has no bytecode verifier.
+# C primitives are captured in local upvalues before user code runs so mutating `string.byte` or
+# `type` in `_G` cannot bypass the check on `loadstring` or streamed `load` readers.
 _SANDBOX_CHUNK = """
 local traceback = debug.traceback
+local raw_loadstring = loadstring
+local raw_load = load
+local raw_type = type
+local raw_tostring = tostring
+local str_byte = string.byte
 date, time, difftime = os.date, os.time, os.difftime
 debugstack = function(...) return traceback(...) end
+string.dump = nil
+loadstring = function(source, ...)
+    if raw_type(source) == "string" and str_byte(source, 1) == 27 then
+        return nil, "binary chunks are not allowed"
+    end
+    return raw_loadstring(source, ...)
+end
+load = function(reader, ...)
+    if raw_type(reader) ~= "function" then
+        return raw_load(reader, ...)
+    end
+    local checked_first = false
+    local rejected = false
+    local compiled, err = raw_load(function()
+        local piece = reader()
+        if piece == nil then return nil end
+        if not checked_first then
+            if raw_type(piece) == "number" then
+                piece = raw_tostring(piece)
+            end
+            if raw_type(piece) == "string" and #piece > 0 then
+                checked_first = true
+                if str_byte(piece, 1) == 27 then
+                    rejected = true
+                    return nil
+                end
+            end
+        end
+        return piece
+    end, ...)
+    if rejected then
+        return nil, "binary chunks are not allowed"
+    end
+    return compiled, err
+end
 io, os, package, require, dofile, loadfile, module, debug, python = nil
 """
 
@@ -64,9 +119,13 @@ def new_runtime(*, sandbox: bool = True) -> Any:
             "The embedded Lua 5.1 VM is unavailable: install lupa>=2.1,<3 "
             "(it ships lupa.lua51). Nothing was checked."
         ) from exc
-    # [2026-11-11 T-002] register_eval/register_builtins off: Lua code gets no route into Python.
+    # [2026-11-11 T-060] register_eval/register_builtins off and attribute_filter denying all
+    # attribute reads/writes on Python objects: Lua code gets no route back into Python.
     runtime = lua51.LuaRuntime(
-        register_eval=False, register_builtins=False, unpack_returned_tuples=True
+        register_eval=False,
+        register_builtins=False,
+        unpack_returned_tuples=True,
+        attribute_filter=_deny_python_attributes,
     )
     if sandbox:
         runtime.execute(_SANDBOX_CHUNK)
@@ -96,6 +155,10 @@ def check_syntax(runtime: Any, source: str, chunk_name: str) -> str | None:
         ``None`` when the chunk compiles, otherwise Lua's message, e.g.
         ``Core/Codec.lua:12: unexpected symbol near '/'``.
     """
+    # [2026-11-11 T-060] Reject binary chunks (\x1bLua) in Python before touching the VM, so even
+    # an unsandboxed caller never hands precompiled bytecode to Lua 5.1's unverified undumper.
+    if source.startswith(_LUA_BINARY_PREFIX):
+        return f"{chunk_name}:1: {_BINARY_CHUNK_MESSAGE}"
     compile_only = runtime.execute(_SYNTAX_CHUNK)
     # [2026-11-11 T-002] A leading "@" makes Lua print the name as a file, not as a source snippet.
     message = compile_only(source, "@" + chunk_name)
@@ -164,6 +227,10 @@ def run_chunk(runtime: Any, source: str, chunk_name: str, *args: Any) -> None:
         and with phase ``"runtime"`` when the chunk raises. The message is Lua's own and
         starts with ``chunk_name:<line>:`` for ordinary errors.
     """
+    # [2026-11-11 T-060] Reject precompiled binary chunks (\x1bLua) in Python before crossing
+    # into Lua, matching the WoW client's own refusal of bytecode files.
+    if source.startswith(_LUA_BINARY_PREFIX):
+        raise LuaChunkError("compile", f"{chunk_name}: {_BINARY_CHUNK_MESSAGE}")
     runner = runtime.execute(_RUN_CHUNK)
     # [2026-11-11 T-003] unpack_returned_tuples=True makes the helper's two return values a
     # Python 2-tuple; a leading "@" makes Lua print chunk_name as a file in its messages.
@@ -209,6 +276,10 @@ def run_chunk_value(runtime: Any, source: str, chunk_name: str) -> Any:
         Raises ``LuaChunkError`` with phase ``"compile"`` when the source does not compile,
         and with phase ``"runtime"`` when the chunk raises.
     """
+    # [2026-11-11 T-060] Reject precompiled binary chunks (\x1bLua) in Python before crossing
+    # into Lua, keeping run_chunk_value aligned with run_chunk.
+    if source.startswith(_LUA_BINARY_PREFIX):
+        raise LuaChunkError("compile", f"{chunk_name}: {_BINARY_CHUNK_MESSAGE}")
     runner = runtime.execute(_RUN_CHUNK_VALUE)
     # [2026-11-11 T-005] A leading "@" makes Lua print chunk_name as a file in its messages,
     # exactly as in run_chunk; the helper's three explicit returns unpack as a 3-tuple.

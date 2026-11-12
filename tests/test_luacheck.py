@@ -632,3 +632,13 @@ def test_parse_bytecode_of_real_dump_roundtrips_root_proto() -> None:
     accesses: list[GlobalAccess] = []
     _collect_accesses(proto, accesses)
     assert accesses == [_read("print", 1), _read("UnknownGlobal", 1)]
+
+
+def test_analyze_lua_rejects_binary_chunk_before_unsandboxed_compile() -> None:
+    # [2026-11-11 T-060] Static analysis uses sandbox=False to call string.dump on compiled
+    # source; it must refuse \x1b-prefixed binary bytecode in Python before loadstring runs.
+    analysis = analyze_lua("\x1bLuaQ\x00\x01\x04\x08\x04\x08\x00", _CHUNK)
+    assert analysis.ok is False
+    assert analysis.syntax_error is not None
+    assert analysis.syntax_error.code == "syntax"
+    assert "binary chunks are not allowed" in analysis.syntax_error.message

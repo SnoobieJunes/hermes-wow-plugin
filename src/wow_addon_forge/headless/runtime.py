@@ -1988,6 +1988,13 @@ class SimulatedClient:
                     f"{relative_file!r} cannot be read: {exc}"
                 ) from exc
             chunk_name = f"{addon_name}/{relative_file}"
+            # [2026-11-11 T-060] Reject \x1b-prefixed precompiled Lua 5.1 binary chunks
+            # in Python before crossing into run_addon_chunk; recording a compile
+            # failure keeps client.errors, ForgeProbe, and multi-file load continuation
+            # consistent with ordinary Lua compile errors.
+            if source.startswith("\x1b"):
+                self._controller.record_compile_error(chunk_name, "binary chunks are not allowed")
+                continue
             self._controller.run_addon_chunk(
                 source,
                 chunk_name,
@@ -2322,6 +2329,10 @@ class SimulatedClient:
             Raises ``luavm.LuaChunkError`` when the source fails to compile or
             raises an unhandled Lua error.
         """
+        # [2026-11-11 T-060] Skip the `return <expr>` probe on \x1b-prefixed binary input
+        # so run_chunk_value rejects it immediately in Python as a binary chunk.
+        if lua_source.startswith("\x1b"):
+            return luavm.run_chunk_value(self._runtime, lua_source, chunk_name)
         as_expr = f"return {lua_source}"
         if luavm.check_syntax(self._runtime, as_expr, chunk_name) is None:
             return luavm.run_chunk_value(self._runtime, as_expr, chunk_name)

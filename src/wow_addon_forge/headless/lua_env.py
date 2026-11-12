@@ -67,6 +67,12 @@ return function(bridge)
     end
 
     local raw_debugstack = rawget(_G, "debugstack")
+    -- [2026-11-11 T-060] Capture the sandboxed loadstring and byte/type primitives
+    -- at bootstrap time so addon code that mutates _G or string.* cannot bypass
+    -- binary-chunk rejection inside controller.run_addon_chunk.
+    local raw_loadstring = rawget(_G, "loadstring")
+    local raw_type = type
+    local str_byte = string.byte
     local function safe_debugstack()
         if type(raw_debugstack) == "function" then
             local ok, stack = pcall(raw_debugstack, 2)
@@ -954,14 +960,29 @@ return function(bridge)
         rawset(_G, name, value)
     end
 
+    local function record_compile_failure(err_text)
+        local msg = "compile: " .. tostring(err_text)
+        bridge_record(msg, "")
+        if custom_error_handler then
+            pcall(custom_error_handler, msg)
+        end
+    end
+
+    function controller.record_compile_error(chunk_name, reason)
+        record_compile_failure(tostring(chunk_name) .. ": " .. tostring(reason))
+    end
+
     function controller.run_addon_chunk(source, chunk_name, addon_name, ns_table)
-        local compiled, err = loadstring(source, "@" .. tostring(chunk_name))
+        -- [2026-11-11 T-060] Defense-in-depth alongside the Python pre-check in
+        -- SimulatedClient.load_addon: reject \27-prefixed binary chunks before
+        -- calling the captured sandboxed loadstring.
+        if raw_type(source) == "string" and str_byte(source, 1) == 27 then
+            record_compile_failure(tostring(chunk_name) .. ": binary chunks are not allowed")
+            return false
+        end
+        local compiled, err = raw_loadstring(source, "@" .. tostring(chunk_name))
         if not compiled then
-            local msg = "compile: " .. tostring(err)
-            bridge_record(msg, "")
-            if custom_error_handler then
-                pcall(custom_error_handler, msg)
-            end
+            record_compile_failure(err)
             return false
         end
         return call_protected(compiled, addon_name, ns_table)

@@ -171,7 +171,8 @@ uv run pytest --cov=src/wow_addon_forge --cov-fail-under=85 && uv run ruff check
 Good to know: `api sync` prefers your client's own exported interface code
 (`ExportInterfaceFiles code`, zero network) and otherwise downloads the
 public documentation mirrors — the result's `note` always says which. The
-index is cached under `~/.hermes/cache/wow-addon-forge/`. Lua is always
+index is cached under your active Hermes profile (`<hermes_home>/cache/wow-addon-forge/`,
+default `~/.hermes/cache/wow-addon-forge/`). Lua is always
 checked in the embedded Lua 5.1 VM, never the system `lua`.
 
 ## Documents
@@ -192,7 +193,7 @@ This is the catalog disclosure from `docs/SPEC-PLUGIN.md` §13, as the shipping 
 
 - Network: GitHub raw downloads of the API documentation mirrors, only on `wow_api sync`.
 - Reads outside the plugin: the WoW install (`Interface/AddOns`, `WTF/**` SavedVariables, `.build.info`). Account folder names are counted and never printed.
-- Writes outside the plugin: `Interface/AddOns/<name>` on `wow_install`, and `Inbox.lua` on `wow_bridge push`. Each is an explicit tool call. Backups and the API index cache stay under `~/.hermes/cache/wow-addon-forge/`.
+- Writes outside the plugin: `Interface/AddOns/<name>` on `wow_install`, and `Inbox.lua` on `wow_bridge push`. Each is an explicit tool call. Backups, bridge cursors, and the API index cache stay under the active Hermes profile (`<hermes_home>/cache/wow-addon-forge/`, default `~/.hermes/cache/wow-addon-forge/`).
 - No shell commands, no background processes, no stored credentials, no telemetry, no self-update.
 - Never: input automation, game memory, or a gold-bid loot system.
 

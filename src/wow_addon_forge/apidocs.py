@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from wow_addon_forge import luavm, tocfile
-from wow_addon_forge.env import FileSystem, detect_installs
+from wow_addon_forge.env import FileSystem, detect_installs, hermes_home_dir
 
 SCHEMA_VERSION = 1
 DEFAULT_FLAVOR = "forever"
@@ -1525,12 +1525,13 @@ def default_cache_dir() -> Path:
         None.
 
     Returns:
-        ``$HERMES_HOME/cache/wow-addon-forge/api-index`` when ``HERMES_HOME`` is set and
-        non-empty, else ``~/.hermes/cache/wow-addon-forge/api-index``.
+        ``<hermes_home>/cache/wow-addon-forge/api-index``, resolved via
+        ``hermes_constants.get_hermes_home()`` inside Hermes (falling back to
+        ``$HERMES_HOME`` and ``~/.hermes`` standalone).
 
     Failure modes:
         None.
     """
-    hermes_home = os.environ.get("HERMES_HOME")
-    base = Path(hermes_home) if hermes_home else Path.home() / ".hermes"
-    return base / "cache" / "wow-addon-forge" / "api-index"
+    # [2026-11-11 T-060] Delegate to hermes_home_dir() so active named profiles isolate
+    # their API index cache without diverging standalone CLI/CI runs.
+    return hermes_home_dir() / "cache" / "wow-addon-forge" / "api-index"

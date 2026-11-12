@@ -617,3 +617,35 @@ def test_wow_test_auto_discovery_cross_vm_bridge_and_helpers(
     assert folder_payload["verdict"] == "pass" and folder_payload["passed"] == 1
     missing_test = _test_payload(fake_fs_factory, files, base, tmp_path, tests="Tests/nope.lua")
     assert _error_code(missing_test) == "bad-path"
+
+
+def test_wow_check_and_wow_test_reject_binary_lua_chunks(
+    fake_fs_factory: Any, tmp_path: Path
+) -> None:
+    # [2026-11-11 T-060] Neither wow_check nor wow_test may accept \x1b-prefixed bytecode.
+    binary = "\x1bLuaQ\x00\x01\x04\x08\x04\x08\x00"
+    bad_base, bad_files = _addon("BinCheck", {"Core.lua": binary})
+    report = check_addon(bad_base, index=_index(), fs=fake_fs_factory(bad_files))
+    assert report["verdict"] == "fail"
+    assert any(
+        f["code"] == "syntax" and "binary chunks are not allowed" in f["message"]
+        for f in report["findings"]
+    )
+    test_base, test_files = _addon("BinTest", {"Core.lua": "local ok = 1\n"})
+    test_files[f"{test_base}/Tests/bin.lua"] = binary
+    test_report = run_addon_tests(test_base, index=_index(), fs=fake_fs_factory(test_files))
+    assert test_report["verdict"] == "fail"
+    assert test_report["failed"] == 1
+    assert "binary chunks are not allowed" in test_report["results"][0]["message"]
+    from wow_addon_forge.check import _run_one_case
+
+    ok_case, msg_case, _ = _run_one_case(
+        source=binary,
+        rel_test="Tests/bin.lua",
+        idx=1,
+        addon_path=test_base,
+        index=_index(),
+        fs=fake_fs_factory(test_files),
+        clients=1,
+    )
+    assert ok_case is False and "binary chunks are not allowed" in msg_case

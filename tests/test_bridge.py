@@ -128,3 +128,19 @@ def test_push_refuses_an_addon_without_the_bridge_header(tmp_path: Path) -> None
     assert payload["error"]["code"] == "bridge-disabled"
     plain = wow / "_forever_" / "Interface" / "AddOns" / "Plain"
     assert not (plain / "Inbox.lua").exists()
+
+
+def test_default_cursor_dir_follows_active_hermes_profile(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import sys
+    import types
+
+    from wow_addon_forge.bridge import default_cursor_dir
+
+    # [2026-11-11 T-060] Bridge cursors isolate per active Hermes profile via get_hermes_home().
+    profile_home = tmp_path / "profiles" / "officer"
+    fake_constants = types.ModuleType("hermes_constants")
+    fake_constants.get_hermes_home = lambda: profile_home  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "hermes_constants", fake_constants)
+    assert default_cursor_dir() == profile_home / "cache" / "wow-addon-forge" / "bridge-cursors"

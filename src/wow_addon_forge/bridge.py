@@ -22,7 +22,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from wow_addon_forge.env import FileSystem
+from wow_addon_forge.env import FileSystem, hermes_home_dir
 from wow_addon_forge.headless.savedvars_io import format_saved_variables_lua
 from wow_addon_forge.install import InstallError, addon_name, flavor_folder, locate_addons_dir
 from wow_addon_forge.luavm import check_syntax, new_runtime
@@ -60,13 +60,13 @@ def default_cursor_dir() -> Path:
     Why this exists: the cursor is plugin state, not game state (SPEC-PLUGIN §3
         writes the pull cursor, not a file under ``WTF``).
     Args: none.
-    Returns: ``$HERMES_HOME/cache/wow-addon-forge/bridge-cursors``, or the same
-        path under ``~/.hermes`` when ``HERMES_HOME`` is unset or empty.
+    Returns: ``<hermes_home>/cache/wow-addon-forge/bridge-cursors`` via
+        ``hermes_home_dir()`` (follows ``hermes_constants.get_hermes_home()`` inside
+        Hermes, falling back to ``$HERMES_HOME`` and ``~/.hermes`` standalone).
     Failure modes: none.
     """
-    hermes_home = os.environ.get("HERMES_HOME")
-    base = Path(hermes_home) if hermes_home else Path.home() / ".hermes"
-    return base / "cache" / "wow-addon-forge" / "bridge-cursors"
+    # [2026-11-11 T-060] Honour the active Hermes profile home via hermes_home_dir().
+    return hermes_home_dir() / "cache" / "wow-addon-forge" / "bridge-cursors"
 
 
 def _as_int(value: Any) -> int | None:

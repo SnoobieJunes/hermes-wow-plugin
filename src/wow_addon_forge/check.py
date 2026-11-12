@@ -980,6 +980,9 @@ def _walk_lua_files(fs: FileSystem, root: str) -> list[str]:
 
 
 def _discover_names(source: str, rel_test: str) -> tuple[list[str], tuple[str, str] | None]:
+    # [2026-11-11 T-060] Reject precompiled binary test chunks in Python before VM entry.
+    if source.startswith("\x1b"):
+        return [], (f"{rel_test}: binary chunks are not allowed", "")
     disc_rt = luavm.new_runtime(sandbox=True)
     disc_rt.execute(_HELPERS_LUA)
     result = disc_rt.execute(_DISCOVER_LUA)(source, rel_test)
@@ -1074,6 +1077,9 @@ def _run_one_case(
     fs: FileSystem,
     clients: int,
 ) -> tuple[bool, str, str]:
+    # [2026-11-11 T-060] Reject precompiled binary test chunks in Python before VM entry.
+    if source.startswith("\x1b"):
+        return False, f"{rel_test}: binary chunks are not allowed", ""
     world = World(index, fs=fs)
     clients_list: list[SimulatedClient] = []
     for position in range(clients):

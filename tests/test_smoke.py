@@ -86,7 +86,8 @@ def test_sandbox_matches_what_the_game_exposes() -> None:
     runtime = new_runtime()
     for missing in ("io", "os", "package", "require", "dofile", "loadfile", "debug", "python"):
         assert runtime.eval(missing) is None, missing
-    for present in ("date", "time", "difftime", "debugstack", "loadstring", "setfenv"):
+    assert runtime.eval("string.dump") is None
+    for present in ("date", "time", "difftime", "debugstack", "loadstring", "load", "setfenv"):
         assert runtime.eval(f"type({present})") == "function", present
 
 

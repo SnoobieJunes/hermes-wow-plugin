@@ -134,7 +134,10 @@ user-triggered, read-only, and disclosed in the README.
 A strict stand-in for the game inside `lupa.lua51`:
 
 - **Sandbox.** The environment matches the game's: no `io`, no `os` beyond
-  `date`/`time`/`difftime`/`clock`, no `require`/`package`/`loadfile`/`dofile`.
+  `date`/`time`/`difftime`, no `require`/`package`/`loadfile`/`dofile`, no
+  `string.dump`, no precompiled Lua 5.1 binary chunks (`\27Lua`) in
+  `loadstring`/`load` or Python source entry points, and an `attribute_filter`
+  on `LuaRuntime` that refuses attribute reads and writes on Python objects.
   WoW's additions (`strsplit`, `strjoin`, `wipe`, `tinsert`, `format`, `bit`,
   `date`, `time`, `GetTime`) are provided.
 - **Strict API.** Every indexed function exists and returns defaults shaped by

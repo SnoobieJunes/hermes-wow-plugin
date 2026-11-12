@@ -25,7 +25,7 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, Protocol
 
-from wow_addon_forge.env import FileSystem
+from wow_addon_forge.env import FileSystem, hermes_home_dir
 from wow_addon_forge.tocfile import parse_toc
 
 _NAME_RE = re.compile(r"^[A-Za-z0-9_!-]+$")
@@ -39,13 +39,13 @@ def default_data_dir() -> Path:
     Why this exists: SPEC-PLUGIN §3 puts backups in the plugin's own data directory,
         never in the game folder. One function keeps the tool and the tests agreed.
     Args: none.
-    Returns: ``$HERMES_HOME/cache/wow-addon-forge/backups``, or the same path under
-        ``~/.hermes`` when ``HERMES_HOME`` is unset or empty.
+    Returns: ``<hermes_home>/cache/wow-addon-forge/backups`` via ``hermes_home_dir()``
+        (follows ``hermes_constants.get_hermes_home()`` inside Hermes, falling back to
+        ``$HERMES_HOME`` and ``~/.hermes`` standalone).
     Failure modes: none.
     """
-    hermes_home = os.environ.get("HERMES_HOME")
-    base = Path(hermes_home) if hermes_home else Path.home() / ".hermes"
-    return base / "cache" / "wow-addon-forge" / "backups"
+    # [2026-11-11 T-060] Honour the active Hermes profile home via hermes_home_dir().
+    return hermes_home_dir() / "cache" / "wow-addon-forge" / "backups"
 
 
 class InstallError(Exception):

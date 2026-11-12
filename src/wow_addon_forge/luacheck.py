@@ -544,6 +544,11 @@ def _syntax_finding(error_text: str, chunk_name: str) -> Finding:
 def _compile_and_dump(
     source: str, chunk_name: str, runtime: Any | None
 ) -> tuple[bytes | None, Finding | None]:
+    # [2026-11-11 T-060] Reject \x1b-prefixed precompiled binary chunks in Python before
+    # touching the unsandboxed compile-only runtime: Lua 5.1's undumper has no bytecode
+    # verifier, and the WoW client refuses binary addon chunks at load time.
+    if source.startswith("\x1b"):
+        return None, _syntax_finding(f"{chunk_name}:1: binary chunks are not allowed", chunk_name)
     # [2026-11-11 T-006] sandbox=False: this runtime only compiles (loadstring) and dumps;
     # the addon chunk is never called, so it needs no WoW-shaped globals and addon code
     # never executes here.

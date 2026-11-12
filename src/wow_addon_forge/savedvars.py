@@ -83,6 +83,14 @@ def parse_savedvars_lua(
     """
     # [2026-11-11 T-009] The client may write a BOM, which Lua 5.1 rejects, so remove one.
     clean = text.removeprefix("\ufeff")
+    # [2026-11-11 T-060] Reject precompiled binary chunks (\x1bLua) in Python before
+    # touching the VM; SavedVariables written by the client are always plain text.
+    if text.startswith("\x1b") or clean.startswith("\x1b"):
+        raise SavedVarsReadError(
+            "bad-savedvars",
+            f"{chunk_name} failed to parse (compile): binary chunks are not allowed",
+            _BAD_SAVEDVARS_HINT,
+        )
     active = luavm.new_runtime(sandbox=True) if runtime is None else runtime
     # [2026-11-11 T-009] A leading "@" makes Lua print chunk_name as a file, as in run_chunk.
     lua_chunk_name = chunk_name if chunk_name.startswith("@") else "@" + chunk_name

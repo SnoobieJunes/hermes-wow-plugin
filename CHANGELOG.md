@@ -3,6 +3,7 @@
      `<YYYY-MM-DD> — T-<###> — <what changed, user-visible effect>`
      Internal-only tasks get one line ending `(no user-visible change)`. -->
 
+2026-11-11 — T-060 — Hardened the embedded Lua 5.1 sandbox and profile cache paths per catalog review (NousResearch/hermes-agent#154059): precompiled binary chunks (`\27Lua`) and `string.dump` are refused in Lua and Python, Python object attribute access across `lupa` is blocked by `attribute_filter`, and API index, backup and bridge-cursor caches follow the active Hermes profile (`hermes_constants.get_hermes_home()`)
 2026-11-11 — T-037/T-038 — Published: the repository is public, the Hermes catalog PR is open (NousResearch/hermes-agent#154059), the demo is posted and the hackathon entry form submitted before the 14:00 PST deadline (no user-visible change)
 2026-11-11 — T-059 — Added the Discord bridge relay (`scripts/discord_bridge.py`): board posts can be delivered to a real Discord channel and Discord posts pushed back onto the board after `/reload`; the webhook URL comes from `$GUILDHALL_DISCORD_WEBHOOK` and is never committed
 2026-11-11 — T-054 — Fixed officers being refused as "not-allowed" in the live client: role lookup now matches the bare character name Forever's roster uses, not only the Name-Realm form records carry

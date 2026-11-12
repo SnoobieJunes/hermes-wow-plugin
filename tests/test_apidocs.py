@@ -681,7 +681,25 @@ def test_u_url_fetcher_refusals_decoding_and_failures() -> None:
 def test_v_default_cache_dir_honours_hermes_home(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """V: default_cache_dir follows HERMES_HOME, else ~/.hermes, and creates nothing."""
+    """V: default_cache_dir honours get_hermes_home(), HERMES_HOME, else ~/.hermes."""
+    import sys
+    import types
+
+    profile_home = tmp_path / "profiles" / "officer"
+    fake_constants = types.ModuleType("hermes_constants")
+    fake_constants.get_hermes_home = lambda: profile_home  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "hermes_constants", fake_constants)
+    profile_expected = profile_home / "cache" / "wow-addon-forge" / "api-index"
+    assert default_cache_dir() == profile_expected
+    assert not profile_expected.exists()
+
+    # Module present without callable get_hermes_home falls back to HERMES_HOME:
+    monkeypatch.setitem(sys.modules, "hermes_constants", types.ModuleType("hermes_constants"))
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    assert default_cache_dir() == tmp_path / "cache" / "wow-addon-forge" / "api-index"
+
+    # Standalone fallback when hermes_constants is absent:
+    monkeypatch.delitem(sys.modules, "hermes_constants")
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     expected = tmp_path / "cache" / "wow-addon-forge" / "api-index"
     assert default_cache_dir() == expected

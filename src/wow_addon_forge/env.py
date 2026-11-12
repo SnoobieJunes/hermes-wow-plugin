@@ -12,6 +12,7 @@ Invariants owned by this file:
 
 from __future__ import annotations
 
+import importlib
 import os
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -24,6 +25,39 @@ DEFAULT_ROOTS: tuple[str, ...] = (
     "/Applications/World of Warcraft",
     "C:\\Program Files (x86)\\World of Warcraft",
 )
+
+
+def hermes_home_dir() -> Path:
+    """Return the active Hermes profile home directory.
+
+    Why this exists:
+        Inside Hermes Agent, ``hermes_constants.get_hermes_home()`` resolves the active
+        profile (including context-local overrides in Desktop and gateway sessions, not
+        only ``$HERMES_HOME``). Standalone CLI runs and CI execute outside the Hermes
+        checkout where ``hermes_constants`` is not installed, so they fall back to
+        ``$HERMES_HOME`` and then ``~/.hermes``.
+
+    Args:
+        None.
+
+    Returns:
+        Path to the active Hermes home directory (never created by this helper).
+
+    Failure modes:
+        None; missing ``hermes_constants`` falls back to environment/home resolution.
+    """
+    # [2026-11-11 T-060] Import dynamically so standalone `uv run mypy src` and CI run
+    # without Hermes's root modules on sys.path while live plugin sessions honour
+    # hermes_constants.get_hermes_home() across named profiles.
+    try:
+        constants_mod = importlib.import_module("hermes_constants")
+        get_home = getattr(constants_mod, "get_hermes_home", None)
+        if callable(get_home):
+            return Path(get_home())
+    except ImportError:
+        pass
+    hermes_home = os.environ.get("HERMES_HOME", "").strip()
+    return Path(hermes_home).expanduser() if hermes_home else Path.home() / ".hermes"
 
 
 class FileSystem(Protocol):

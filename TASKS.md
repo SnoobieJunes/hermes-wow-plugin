@@ -75,6 +75,10 @@
 ## Dropped
 
 ## Done
+- [x] T-060 — Harden the Lua 5.1 sandbox against binary chunks and Python attribute access, and honour active Hermes profile home (2026-11-11, this commit)
+      Why: Catalog PR review (NousResearch/hermes-agent#154059): Lua 5.1 precompiled binary chunks (`\27Lua`) bypass an unguarded `loadstring`/`load`, Python object attribute access across `lupa` needs an explicit `attribute_filter`, and cache directories should follow `hermes_constants.get_hermes_home()`.
+      Accept: `new_runtime(sandbox=True)` sets `string.dump = nil`, wraps `loadstring` and `load` to return `nil, "binary chunks are not allowed"` on `\27`-prefixed chunks or readers, and blocks Python object attribute access via `attribute_filter`; Python rejects `\x1b`-prefixed source before `run_chunk`, `run_chunk_value`, `check_syntax`, `run_addon_chunk`, `luacheck`, `savedvars`, and `wow_test`; `default_cache_dir`, `default_data_dir`, and `default_cursor_dir` resolve via `hermes_constants.get_hermes_home()` with standalone fallback; regression test feeds a `string.dump` chunk back to `loadstring` under `new_runtime(sandbox=True)` and fails cleanly. Full gate green.
+      Touches: `src/wow_addon_forge/luavm.py`, `src/wow_addon_forge/headless/lua_env.py`, `src/wow_addon_forge/headless/runtime.py`, `src/wow_addon_forge/luacheck.py`, `src/wow_addon_forge/savedvars.py`, `src/wow_addon_forge/check.py`, `src/wow_addon_forge/env.py`, `src/wow_addon_forge/apidocs.py`, `src/wow_addon_forge/install.py`, `src/wow_addon_forge/bridge.py`, `tests/`, `docs/SPEC-PLUGIN.md`, `README.md`, `CHANGELOG.md`, `TASKS.md`, `goose-deuce.md`   Depends: T-037   Gated: none
 - [x] T-038 — Record the demo, post it, submit the form (2026-11-11, this commit)
       Why: The other two entry requirements, due 2026-11-11 14:00 PST.
       Accept: A demo under 90 seconds is posted on X tagging @NousResearch; the form is submitted with the PR and post URLs; both URLs are written on this task.
